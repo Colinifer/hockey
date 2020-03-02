@@ -1,0 +1,99 @@
+pkgs <- c("devtools", "tidyverse", "readr",
+          "pander", "na.tools", "ggimage",
+          "devtools", "teamcolors", "glue",
+          "animate", "dplyr", "tictoc",
+          "animation", "gt", "DT",
+          "ggthemes", "bbplot", "ggtext",
+          "ggforce", "ggridges", "ggrepel",
+          "ggbeeswarm", "extrafont")
+
+##install.packages(c("devtools", "tidyverse", "readr", "pander", "na.tools", "ggimage", "devtools", "teamcolors", "glue", "animate", "dplyr", "tictoc", "animation"))
+##devtools::install_github(repo = "maksimhorowitz/nflscrapR")
+
+library()
+library(tidyverse)
+library(readr)
+library(pander)
+library(dplyr)
+library(na.tools)
+library(ggimage)
+library(teamcolors) # NFL team colors and logos
+library(plyr)
+library(readr)
+library(glue)
+##library(animate)
+library(animation)
+library(tictoc)
+library(gt) # beautiful tables
+library(DT) # beautiful interactive tables
+library(ggthemes) # custom pre-built themes
+library(bbplot) # more themes
+library(ggtext) # custom text color
+library(ggforce) # better annotations
+library(ggridges) # many distributions at once
+library(ggrepel) # better labels
+library(ggbeeswarm) # beeswarm plots
+library(extrafont) # for extra fonts
+
+
+
+##reset
+setwd("~/")
+gid <- paste(getwd())
+gid
+device <- ""
+
+if (gid == "/Volumes/HDD/Users/colinwelsh") {
+  ##Maverick - MBP
+  setwd("~/Documents/dev/hockey")
+  device <- "Maverick (MBP)"
+} else if (gid == "/Users/ColinWelsh") {
+  ##Goose - iMac
+  setwd("~/Documents/dev/hockey")
+  device <- "Goose (iMac)"
+  ##add Goose
+} 
+print(paste(device, "is ready for some hockey", sep = " "))
+rm(gid, device)
+
+
+# other dependent variables
+today <- Sys.Date()
+
+#   test date
+##  date <- 202001
+date <- format(today, format="%Y%m%d")
+userYear <- 2019 ##necessary for saved 
+userWeek <- 17 ##not necessary at the moment
+seasonState <- "post"
+fgame_ids <- paste("data/games/", seasonState, "_season/", seasonState, "_games_", userYear, ".csv", sep ="")
+fteamabbr <- paste("data/season_total/team_abbr.csv", sep = "")
+teams <- read.csv(fteamabbr)
+game_ids <- read.csv(fgame_ids)
+game_ids <- scrape_game_ids(userYear, type = seasonState)
+write.csv(game_ids, fgame_ids)
+
+source("functions/scrapePBP.R")
+source("functions/addTargets.R")
+scrapePBP(date)
+
+pbpSeason <- list.files(paste("data/games/", userYear, "/", sep = ""),
+                      pattern = "*.csv", full.names = TRUE) %>%
+  lapply(read_csv) %>%
+  bind_rows
+pbpSeason
+write.csv(pbpSeason, file = paste("data/season_total/", userYear,"pbp.csv", sep = ""), row.names = FALSE)
+
+playerSeason <- list.files(paste("data/players/", userYear, "/", sep = ""),
+                      pattern = "*.csv", full.names = TRUE) %>%
+  lapply(read_csv) %>%
+  bind_rows
+playerSeason
+write.csv(playerSeason, file = paste("data/season_total/", userYear, "players.csv", sep = ""), row.names = FALSE)
+
+rosterSeason <- list.files(paste("data/teams/", userYear, "/", sep = ""),
+                           pattern = "*.csv", full.names = TRUE) %>%
+  lapply(read_csv) %>%
+  bind_rows
+rosterSeason
+write.csv(rosterSeason, file = paste("data/season_total/", userYear, "roster.csv", sep = ""), row.names = FALSE)
