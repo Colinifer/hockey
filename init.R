@@ -1,4 +1,4 @@
-pkgs <- c("devtools", "tidyverse", "readr",
+pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
           "pander", "na.tools", "ggimage",
           "devtools", "teamcolors", "glue",
           "animate", "dplyr", "tictoc",
@@ -12,6 +12,8 @@ pkgs <- c("devtools", "tidyverse", "readr",
 
 library()
 library(tidyverse)
+library(RMariaDB)
+library(DBI)
 library(readr)
 library(pander)
 library(dplyr)
