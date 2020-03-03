@@ -5,12 +5,14 @@ pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
           "animation", "gt", "DT",
           "ggthemes", "bbplot", "ggtext",
           "ggforce", "ggridges", "ggrepel",
-          "ggbeeswarm", "extrafont")
+          "ggbeeswarm", "extrafont", "RCurl",
+          "xml2", "rvest", "jsonlite",
+          "foreach", "lubridate", "snakecase")
 
 ##install.packages(c("devtools", "tidyverse", "readr", "pander", "na.tools", "ggimage", "devtools", "teamcolors", "glue", "animate", "dplyr", "tictoc", "animation"))
-##devtools::install_github(repo = "maksimhorowitz/nflscrapR")
+##download https://downloads.mariadb.org/connector-c/
 
-library()
+library(devtools)
 library(tidyverse)
 library(RMariaDB)
 library(DBI)
@@ -36,6 +38,13 @@ library(ggridges) # many distributions at once
 library(ggrepel) # better labels
 library(ggbeeswarm) # beeswarm plots
 library(extrafont) # for extra fonts
+library(RCurl)
+library(xml2)
+library(rvest)
+library(jsonlite)
+library(foreach)
+library(lubridate)
+library(snakecase)
 
 
 
@@ -59,43 +68,3 @@ print(paste(device, "is ready for some hockey", sep = " "))
 rm(gid, device)
 
 
-# other dependent variables
-today <- Sys.Date()
-
-#   test date
-##  date <- 202001
-date <- format(today, format="%Y%m%d")
-userYear <- 2019 ##necessary for saved 
-userWeek <- 17 ##not necessary at the moment
-seasonState <- "post"
-fgame_ids <- paste("data/games/", seasonState, "_season/", seasonState, "_games_", userYear, ".csv", sep ="")
-fteamabbr <- paste("data/season_total/team_abbr.csv", sep = "")
-teams <- read.csv(fteamabbr)
-game_ids <- read.csv(fgame_ids)
-game_ids <- scrape_game_ids(userYear, type = seasonState)
-write.csv(game_ids, fgame_ids)
-
-source("functions/scrapePBP.R")
-source("functions/addTargets.R")
-scrapePBP(date)
-
-pbpSeason <- list.files(paste("data/games/", userYear, "/", sep = ""),
-                      pattern = "*.csv", full.names = TRUE) %>%
-  lapply(read_csv) %>%
-  bind_rows
-pbpSeason
-write.csv(pbpSeason, file = paste("data/season_total/", userYear,"pbp.csv", sep = ""), row.names = FALSE)
-
-playerSeason <- list.files(paste("data/players/", userYear, "/", sep = ""),
-                      pattern = "*.csv", full.names = TRUE) %>%
-  lapply(read_csv) %>%
-  bind_rows
-playerSeason
-write.csv(playerSeason, file = paste("data/season_total/", userYear, "players.csv", sep = ""), row.names = FALSE)
-
-rosterSeason <- list.files(paste("data/teams/", userYear, "/", sep = ""),
-                           pattern = "*.csv", full.names = TRUE) %>%
-  lapply(read_csv) %>%
-  bind_rows
-rosterSeason
-write.csv(rosterSeason, file = paste("data/season_total/", userYear, "roster.csv", sep = ""), row.names = FALSE)
