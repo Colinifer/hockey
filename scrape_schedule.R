@@ -16,3 +16,4 @@ tibble(schedule)
 
 today <- schedule %>% 
   filter(game_date == paste(Sys.Date()))
+tibble(today)
