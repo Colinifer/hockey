@@ -1,6 +1,6 @@
-## Packages ##
+ ## Packages ##
 
-##########
+####################
 
 pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
           "pander", "na.tools", "ggimage",
@@ -50,11 +50,11 @@ library(foreach)
 library(lubridate)
 library(snakecase)
 
-##########
+####################
 
 ## Initialize Working Directory
 
-##########
+####################
 
 ##reset
 setwd("~/")
@@ -77,7 +77,7 @@ if (gid == "/Volumes/HDD/Users/colinwelsh") {
 }
 print(paste(device, "is ready for some hockey", sep = " "))
 rm(gid, device)
-##########
+####################
 
 ## Create Items
 
