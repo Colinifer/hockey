@@ -8,7 +8,7 @@ fpbp_scrape <- paste("data/pbp/", userYear, "pbp.csv", sep = "")
 ## Scrape games
 pbp_scrape <- sc.scrape_pbp(games = as.character(seq(2019020001, 2019020100, by = 1)))
 
-pbp_scrape %>% write.csv(file = fpbp_scrape)
+pbp_scrape %>% write.csv(file = fpbp_scrape, row.names = FALSE)
 
 
 ####################

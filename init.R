@@ -81,3 +81,5 @@ rm(gid, device)
 
 ## Create Items
 
+userYear <- 2019
+userDate <- Sys.Date()
