@@ -1,3 +1,7 @@
+## Packages ##
+
+##########
+
 pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
           "pander", "na.tools", "ggimage",
           "devtools", "teamcolors", "glue",
@@ -46,7 +50,11 @@ library(foreach)
 library(lubridate)
 library(snakecase)
 
+##########
 
+## Initialize Working Directory
+
+##########
 
 ##reset
 setwd("~/")
@@ -63,7 +71,13 @@ if (gid == "/Volumes/HDD/Users/colinwelsh") {
   setwd("~/Documents/dev/hockey")
   device <- "Goose (iMac)"
   ##add Goose
-} 
+} else if (gid == "/home/rstudio-user") {
+  setwd("/cloud/project")
+  device <- "RStudio Cloud"
+}
 print(paste(device, "is ready for some hockey", sep = " "))
 rm(gid, device)
+##########
+
+## Create Items
 
