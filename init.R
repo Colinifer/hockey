@@ -67,4 +67,3 @@ if (gid == "/Volumes/HDD/Users/colinwelsh") {
 print(paste(device, "is ready for some hockey", sep = " "))
 rm(gid, device)
 
-
