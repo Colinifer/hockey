@@ -9,6 +9,10 @@ x <- 1
 ## Scrape games
 pbp_scrape <- sc.scrape_pbp(games = game_ids[x])
 
+
+
+
+##### wrap into function 
 game_info_df_new <-     pbp_scrape$game_info_df       ## game information data
 pbp_base_new <-         pbp_scrape$pbp_base           ## main play-by-play data
 pbp_extras_new <-       pbp_scrape$pbp_extras         ## extra play-by-play data
@@ -18,6 +22,7 @@ roster_df_new <-        pbp_scrape$roster_df          ## roster data
 scratches_df_new <-     pbp_scrape$scratches_df       ## scratches data
 event_summary_df_new <- pbp_scrape$events_summary_df  ## event summary data
 scrape_report <-        pbp_scrape$report             ## scrape report
+
 
 
 ####################
