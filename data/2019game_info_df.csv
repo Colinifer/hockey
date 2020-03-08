@@ -1,0 +1,2 @@
+"game_id","season","game_date","session","game_time_start","game_time_end","venue","attendance","home_team","away_team","home_score","away_score","game_end","home_coach","away_coach","referee_1","referee_2","linesman_1","linesman_2","coord_source"
+2019020001,20192020,"2019-10-02","R","7:13 EDT","9:50 EDT","Scotiabank Arena",19612,"TOR","OTT",5,3,"REG","MIKE.BABCOCK","D.J..SMITH","KYLE.REHMAN","KEVIN.POLLOCK","RYAN.DAISY","BRAD.KOVACHIK","NHL_API"
