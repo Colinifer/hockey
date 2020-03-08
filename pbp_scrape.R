@@ -1,11 +1,10 @@
 library(RCurl); library(xml2); library(rvest); library(jsonlite); library(foreach)
 library(lubridate)
 library(tidyverse)
-
 source("EH_scrape_functions.R")
-game_ids <- as.character(seq(2019020001, 2019020100, by = 1))
-x <- 1
 
+userYear <- 2019
+fschedule <- paste("schedule/", userYear, "schedule.csv", sep = "")
 schedule <- sc.scrape_schedule(start_date = paste(userYear, "-10-01", sep = ""), end_date = paste(userYear + 1, "-07-01", sep = ""), print_sched = TRUE)
 
 write.csv(schedule, file = fschedule, row.names = FALSE)
@@ -20,16 +19,16 @@ yesterday <- schedule %>%
   filter(game_date == paste(Sys.Date()-1))
 tibble(yesterday)
 
+## list of games
+game_ids <- as.character(seq(2019020238, yesterday$game_id[nrow(yesterday)], by = 1))
 
-game_ids <- as.character(seq(2019020001, yesterday$game_id[nrow(yesterday)], by = 1))
 
-## Scrape games
-
+## Scrape games and save files after each game
 x = 201902100
-
 for (n in game_ids) {
   print(n)
   pbp_scrape <- sc.scrape_pbp(games = n)
+  
   
   fgame_info_df <- paste("data/", userYear, "game_info_df", ".csv", sep = "")
   fpbp_base <- paste("data/", userYear, "pbp_base", ".csv", sep = "")
@@ -41,6 +40,7 @@ for (n in game_ids) {
   fevents_summary_df <- paste("data/", userYear, "events_summary_df", ".csv", sep = "")
   freport <- paste("data/", userYear, "report", ".csv", sep = "")
   
+  
   game_info_df <-           read.csv(fgame_info_df)
   pbp_base <-               read.csv(fpbp_base)
   pbp_extras <-             read.csv(fpbp_extras)
@@ -50,6 +50,7 @@ for (n in game_ids) {
   scratches_df <-           read.csv(fscratches_df)
   events_summary_df <-      read.csv(fevents_summary_df)
   report <-                 read.csv(freport)
+  
   
   game_info_df_new <-       pbp_scrape$game_info_df       ## game information data
   pbp_base_new <-           pbp_scrape$pbp_base           ## main play-by-play data
@@ -61,22 +62,23 @@ for (n in game_ids) {
   events_summary_df_new <-  pbp_scrape$events_summary_df  ## event summary data
   report_new <-             pbp_scrape$report             ## scrape report
   
+  
   game_info_df_new <- game_info_df_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   pbp_base_new <- pbp_base_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season), home_on_7 = as.logical(home_on_7), away_on_7 = as.logical(away_on_7))
   pbp_extras_new <- pbp_extras_new %>% 
     mutate(game_id = as.numeric(game_id))
   player_shifts_new <- player_shifts_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   player_periods_new <- player_periods_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   roster_df_new <- roster_df_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   scratches_df_new <- scratches_df_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
-  events_summary_df_new <- event_summary_df_new %>% 
-    mutate(game_id = as.numeric(game_id),season = as.numeric(game_id))
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
+  events_summary_df_new <- events_summary_df_new %>% 
+    mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   report_new <- report_new %>% 
     mutate(game_id = as.numeric(game_id))
   
@@ -90,6 +92,7 @@ for (n in game_ids) {
 ##  scratches_df <-       pbp_scrape$scratches_df       ## scratches data
 ##  events_summary_df <-  pbp_scrape$events_summary_df  ## event summary data
 ##  report <-             pbp_scrape$report             ## scrape report
+  
   
   game_info_df <- dplyr::union(game_info_df, game_info_df_new)
   pbp_base <- dplyr::union(pbp_base, pbp_base_new)
@@ -108,45 +111,24 @@ for (n in game_ids) {
   write.csv(player_periods, fplayer_periods, row.names = FALSE)
   write.csv(roster_df, froster_df, row.names = FALSE)
   write.csv(scratches_df, fscratches_df, row.names = FALSE)
-  write.csv(events_summary_df_new, fevents_summary_df, row.names = FALSE)
+  write.csv(events_summary_df, fevents_summary_df, row.names = FALSE)
   write.csv(report, freport, row.names = FALSE)
 }
 
 
-pbp_scrape <- sc.scrape_pbp(games = game_ids[x])
-
-
+## pbp_scrape <- sc.scrape_pbp(games = game_ids[x])
 
 
 ##### wrap into function 
-game_info_df_new <-     pbp_scrape$game_info_df       ## game information data
-pbp_base_new <-         pbp_scrape$pbp_base           ## main play-by-play data
-pbp_extras_new <-       pbp_scrape$pbp_extras         ## extra play-by-play data
-player_shifts_new <-    pbp_scrape$player_shifts      ## full player shifts data
-player_periods_new <-   pbp_scrape$player_periods     ## player TOI sums per period
-roster_df_new <-        pbp_scrape$roster_df          ## roster data
-scratches_df_new <-     pbp_scrape$scratches_df       ## scratches data
-event_summary_df_new <- pbp_scrape$events_summary_df  ## event summary data
-scrape_report <-        pbp_scrape$report             ## scrape report
+## game_info_df_new <-       pbp_scrape$game_info_df       ## game information data
+## pbp_base_new <-           pbp_scrape$pbp_base           ## main play-by-play data
+## pbp_extras_new <-         pbp_scrape$pbp_extras         ## extra play-by-play data
+## player_shifts_new <-      pbp_scrape$player_shifts      ## full player shifts data
+## player_periods_new <-     pbp_scrape$player_periods     ## player TOI sums per period
+## roster_df_new <-          pbp_scrape$roster_df          ## roster data
+## scratches_df_new <-       pbp_scrape$scratches_df       ## scratches data
+## events_summary_df_new <-  pbp_scrape$events_summary_df  ## event summary data
+## scrape_report <-          pbp_scrape$report             ## scrape report
 
-
-
-####################
-
- ## Combine CSV ##
-
-####################
-
-game_ids <- as.character(seq(2019020001, 2019020100, by = 1))
-x <- 1
-
-sc.scrape_pbp(games = game_ids[x])
-
-pbp_season <- list.files(paste("data/pbp/", userYear, "/", sep = ""),
-                         pattern = "*.csv", full.names = TRUE) %>%
-  lapply(read_csv) %>%
-  bind_rows
-playerSeason
-write.csv(playerSeason, file = paste("data/pbp/", userYear, "pbp.csv", sep = ""), row.names=FALSE)
 
 ####################
