@@ -52,7 +52,7 @@ scrape_items <- c("game_info_df_new", "pbp_base_new", "pbp_extras_new",
 ###############
 
 scrape_games_today <- function(x) {
-  pbp_scrape_today <- sc.scrape_pbp(games = x)
+  pbp_scrape_today <- sc.scrape_pbp(games = scrape.1)
   
   game_info_df_new <-       pbp_scrape_today$game_info_df       ## game information data
   pbp_base_new <-           pbp_scrape_today$pbp_base           ## main play-by-play data
@@ -87,7 +87,7 @@ scrape_games_today <- function(x) {
     mutate(game_id = as.numeric(game_id))
 }
 
-save_scrapes <- function() {
+save_scrapes <- function(x) {
   fgame_info_df <- paste("data/", userYear, "game_info_df", ".csv", sep = "")
   fpbp_base <- paste("data/", userYear, "pbp_base", ".csv", sep = "")
   fpbp_extras <- paste("data/", userYear, "pbp_extras", ".csv", sep = "")
@@ -137,6 +137,8 @@ save_scrapes <- function() {
   write.csv(scratches_df, fscratches_df, row.names = FALSE)
   write.csv(events_summary_df, fevents_summary_df, row.names = FALSE)
   write.csv(report, freport, row.names = FALSE)
+  
+  print(x)
 }
 
 ###############
@@ -153,12 +155,12 @@ save_scrapes <- function() {
 ## First batch
 ###############
 
-scrape.1 <- as.character(seq(2019020238, 2019020300))
+scrape.1 <- as.character(seq(2019020251, 2019020300))
 scrape.1 <- scrape.1[!scrape.1%in%dead_games]
 scrape_games_today(scrape.1)
 scrape.1
 View(pbp_base_new)
-save_scrapes()
+save_scrapes(scrape.1)
 
 ###############
 ## Second batch
