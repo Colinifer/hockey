@@ -16,39 +16,13 @@ pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
 ##install.packages(c("devtools", "tidyverse", "readr", "pander", "na.tools", "ggimage", "devtools", "teamcolors", "glue", "animate", "dplyr", "tictoc", "animation"))
 ##download https://downloads.mariadb.org/connector-c/
 
-library(devtools)
-library(tidyverse)
-library(RMariaDB)
-library(DBI)
-library(readr)
-library(pander)
-library(dplyr)
-library(na.tools)
-library(ggimage)
-library(teamcolors) # NFL team colors and logos
-library(plyr)
-library(readr)
-library(glue)
-##library(animate)
-library(animation)
-library(tictoc)
-library(gt) # beautiful tables
-library(DT) # beautiful interactive tables
-library(ggthemes) # custom pre-built themes
-library(bbplot) # more themes
-library(ggtext) # custom text color
-library(ggforce) # better annotations
-library(ggridges) # many distributions at once
-library(ggrepel) # better labels
-library(ggbeeswarm) # beeswarm plots
-library(extrafont) # for extra fonts
-library(RCurl)
-library(xml2)
-library(rvest)
-library(jsonlite)
-library(foreach)
-library(lubridate)
-library(snakecase)
+installed_packages <- pkgs %in%
+  rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(pkgs[!installed_packages])
+}
+
+invisible(lapply(pkgs, library, character.only = TRUE))
 
 ####################
 

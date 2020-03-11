@@ -1,5 +1,12 @@
-library(DBI)
-library(RMariaDB)
+pkgs <- c("DBI", "RMariaDB")
+
+installed_packages <- pkgs %in%
+  rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(pkgs[!installed_packages])
+}
+
+invisible(lapply(pkgs, library, character.only = TRUE))
 
 # DB Variables
 db_user <- 'publiccolin'
@@ -12,9 +19,9 @@ db_port <- 3306
 mydb <-  DBI::dbConnect(RMariaDB::MariaDB(), user = db_user, password = db_password,
                    dbname = db_name, host = db_host, port = db_port)
 s <- paste0("select * from ", db_table)
-rs <- dbSendQuery(mydb, s)
-df <-  fetch(rs, n = -1)
-fetch(res = rs, n = -1)
+## rs <- dbSendQuery(mydb, s)
+## df <-  fetch(rs, n = -1)
+## fetch(res = rs, n = -1)
 on.exit(dbDisconnect(mydb))
 
 # Connect to my-db as defined in ~/.my.cnf

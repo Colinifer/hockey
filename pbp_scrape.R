@@ -1,6 +1,14 @@
-library(RCurl); library(xml2); library(rvest); library(jsonlite); library(foreach)
-library(lubridate)
-library(tidyverse)
+pkgs <- c("RCurl", "xml2", "rvest", 
+          "jsonlite", "foreach", "lubridate",
+          "tidyverse")
+installed_packages <- pkgs %in%
+  rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(pkgs[!installed_packages])
+}
+
+invisible(lapply(pkgs, library, character.only = TRUE))
+
 source("EH_scrape_functions.R")
 
 userYear <- 2019
