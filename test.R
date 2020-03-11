@@ -52,7 +52,7 @@ scrape_items <- c("game_info_df_new", "pbp_base_new", "pbp_extras_new",
 ###############
 
 scrape_games_today <- function(x) {
-  pbp_scrape_today <- sc.scrape_pbp(games = scrape.1)
+  pbp_scrape_today <- sc.scrape_pbp(games = x)
   
   game_info_df_new <-       pbp_scrape_today$game_info_df       ## game information data
   pbp_base_new <-           pbp_scrape_today$pbp_base           ## main play-by-play data
@@ -98,6 +98,10 @@ save_scrapes <- function(x) {
   fevents_summary_df <- paste("data/", userYear, "events_summary_df", ".csv", sep = "")
   freport <- paste("data/", userYear, "report", ".csv", sep = "")
   
+  flocations <- c(fgame_info_df, fpbp_base, fpbp_extras,
+                  fplayer_shifts, fplayer_periods, froster_df,
+                  fscratches_df, fevents_summary_df, freport)
+  
   game_info_df <-           read.csv(fgame_info_df)
   pbp_base <-               read.csv(fpbp_base)
   pbp_extras <-             read.csv(fpbp_extras)
@@ -107,6 +111,10 @@ save_scrapes <- function(x) {
   scratches_df <-           read.csv(fscratches_df)
   events_summary_df <-      read.csv(fevents_summary_df)
   report <-                 read.csv(freport)
+  
+  df <- c(game_info_df, pbp_base, pbp_extras,
+          player_shifts, player_periods, roster_df,
+          scratches_df, events_summary_df, report)
   
   ##  game_info_df <-       pbp_scrape$game_info_df       ## game information data
   ##  pbp_base <-           pbp_scrape$pbp_base           ## main play-by-play data
@@ -167,7 +175,7 @@ save_scrapes(scrape.1)
 ###############
 
 scrape.2 <- as.character(seq(2019020301, 2019020500))
-
+scrape.2 <- scrape.1[!scrape.2%in%dead_games]
 scrape_games_today(scrape.2)
 scrape.2
 save_scrapes()
