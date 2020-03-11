@@ -169,7 +169,7 @@ save_scrapes <- function(x) {
 
 scrape.1 <- as.character(seq(2019020251, 2019020300))
 scrape.1 <- scrape.1[!scrape.1%in%dead_games]
-scrape_games_today(scrape.1)
+scrape_games(scrape.1)
 scrape.1
 View(pbp_base_new)
 save_scrapes(scrape.1)
@@ -180,7 +180,7 @@ save_scrapes(scrape.1)
 
 scrape.2 <- as.character(seq(2019020301, 2019020500))
 scrape.2 <- scrape.1[!scrape.2%in%dead_games]
-scrape_games_today(scrape.2)
+scrape_games(scrape.2)
 scrape.2
 save_scrapes()
 
@@ -190,7 +190,7 @@ save_scrapes()
 
 scrape.3 <- as.character(seq(2019020501, 2019020750))
 
-scrape_games_today(scrape.3)
+scrape_games(scrape.3)
 scrape.3
 save_scrapes()
 
@@ -200,6 +200,6 @@ save_scrapes()
 
 scrape.4 <- as.character(seq(2019020751, 2019021073))
 
-scrape_games_today(scrape.4)
+scrape_games(scrape.4)
 scrape.4
 save_scrapes()
