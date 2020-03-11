@@ -51,8 +51,8 @@ scrape_items <- c("game_info_df_new", "pbp_base_new", "pbp_extras_new",
 ## Functions
 ###############
 
-scrape_games_today <- function(x) {
-  pbp_scrape_today <- sc.scrape_pbp(games = x)
+scrape_games <- function(x) {
+  pbp_scrape <- sc.scrape_pbp(games = x)
   
   game_info_df_new <-       pbp_scrape_today$game_info_df       ## game information data
   pbp_base_new <-           pbp_scrape_today$pbp_base           ## main play-by-play data
@@ -63,6 +63,10 @@ scrape_games_today <- function(x) {
   scratches_df_new <-       pbp_scrape_today$scratches_df       ## scratches data
   events_summary_df_new <-  pbp_scrape_today$events_summary_df  ## event summary data
   report_new <-             pbp_scrape_today$report             ## scrape report
+  
+  df_new <- c(game_info_df_new, pbp_base_new, pbp_extras_new,
+        player_shifts_new, player_periods_new, roster_df_new,
+          scratches_df_new, events_summary_df_new, report_new)
   
   game_info_df_new <- game_info_df_new %>% 
     mutate(game_id = as.numeric(game_id), season = as.numeric(season))
