@@ -1,6 +1,25 @@
 library(DBI)
+library(RMariaDB)
+
+# DB Variables
+db_user <- 'publiccolin'
+db_password <- 'VYgIlmCeNg3wIoLe'
+db_name <- 'hockey'
+db_table <- '2019schedule'
+db_host <- '72.78.233.235' # for local access
+db_port <- 3306
+
+mydb <-  DBI::dbConnect(RMariaDB::MariaDB(), user = db_user, password = db_password,
+                   dbname = db_name, host = db_host, port = db_port)
+s <- paste0("select * from ", db_table)
+rs <- dbSendQuery(mydb, s)
+df <-  fetch(rs, n = -1)
+fetch(res = rs, n = -1)
+on.exit(dbDisconnect(mydb))
+
 # Connect to my-db as defined in ~/.my.cnf
 con <- dbConnect(RMariaDB::MariaDB(), group = "my-db")
+
 
 dbListTables(con)
 dbWriteTable(con, "mtcars", mtcars)
