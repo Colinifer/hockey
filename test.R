@@ -58,7 +58,7 @@ scrape_games <- function(xscrape) {
   ##   assign(paste(pbp_scrape[x], "_new", sep = ""), )
   ## }
   
-  assign(paste(pbp_scrape[x], "_new", sep = ""), )
+  ## assign(paste(pbp_scrape[x], "_new", sep = ""), )
   
   game_info_df_new <-       pbp_scrape$game_info_df       ## game information data
   pbp_base_new <-           pbp_scrape$pbp_base           ## main play-by-play data
@@ -173,7 +173,7 @@ save_scrapes <- function(x) {
 ## First batch
 ###############
 
-scrape.1 <- as.character(seq(2019020251, 2019020300))
+scrape.1 <- as.character(seq(2019020251, 2019020300, by = 1))
 scrape.1 <- scrape.1[!scrape.1%in%dead_games]
 scrape_games(scrape.1)
 View(pbp_base_new)
