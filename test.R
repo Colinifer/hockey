@@ -52,8 +52,11 @@ scrape_items <- c("game_info_df_new", "pbp_base_new", "pbp_extras_new",
 ###############
 
 scrape_games <- function(xscrape) {
-  x <- xscrape
-  pbp_scrape <- sc.scrape_pbp(games = x)
+  pbp_scrape <- sc.scrape_pbp(games = xscrape)
+  
+  ## for (x in nrows(scrape_items)) {
+  ##   assign(paste(pbp_scrape[x], "_new", sep = ""), )
+  ## }
   
   assign(paste(pbp_scrape[x], "_new", sep = ""), )
   
@@ -92,7 +95,7 @@ scrape_games <- function(xscrape) {
     mutate(game_id = as.numeric(game_id), season = as.numeric(season))
   report_new <- report_new %>% 
     mutate(game_id = as.numeric(game_id))
-}
+} 
 
 save_scrapes <- function(x) {
   fgame_info_df <- paste("data/", userYear, "game_info_df", ".csv", sep = "")
