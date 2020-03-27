@@ -21,7 +21,6 @@ installed_packages <- pkgs %in%
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
-
 invisible(lapply(pkgs, library, character.only = TRUE))
 
 ####################
