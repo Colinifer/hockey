@@ -1,6 +1,4 @@
- ## Packages ##
-
-####################
+# Packages ----------------------------------------------------------------
 
 pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
           "pander", "na.tools", "ggimage",
@@ -23,36 +21,33 @@ if (any(installed_packages == FALSE)) {
 }
 invisible(lapply(pkgs, library, character.only = TRUE))
 
-####################
+# Initialize Working Directory --------------------------------------------
 
-## Initialize Working Directory
-
-####################
-
-##reset
 setwd("~/")
 gid <- paste(getwd())
 gid
 device <- ""
 
 if (gid == "/Volumes/HDD/Users/colinwelsh") {
-  ##Maverick - MBP
+  ## Maverick - MBP
   setwd("~/Documents/dev/hockey")
   device <- "Maverick (MBP)"
 } else if (gid == "/Users/ColinWelsh") {
-  ##Goose - iMac
+  ## Goose - iMac
   setwd("~/Documents/dev/hockey")
   device <- "Goose (iMac)"
-  ##add Goose
 } else if (gid == "/home/rstudio-user") {
+  ## RStudio Cloud
   setwd("/cloud/project")
   device <- "RStudio Cloud"
 }
 print(paste(device, "is ready for some hockey", sep = " "))
 rm(gid, device)
-####################
 
-## Create Items
+# Create Items ------------------------------------------------------------
 
 userYear <- 2019
 userDate <- Sys.Date()
+
+today <- format(Sys.Date(), "%Y-%d-%m")
+source("EH_scrape_functions.R")
