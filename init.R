@@ -1,15 +1,39 @@
 # Packages ----------------------------------------------------------------
 
-pkgs <- c("devtools", "tidyverse", "RMariaDB", "DBI", "readr",
-          "pander", "na.tools", "ggimage",
-          "devtools", "teamcolors", "glue",
-          "animate", "dplyr", "tictoc",
-          "animation", "gt", "DT",
-          "ggthemes", "bbplot", "ggtext",
-          "ggforce", "ggridges", "ggrepel",
-          "ggbeeswarm", "extrafont", "RCurl",
-          "xml2", "rvest", "jsonlite",
-          "foreach", "lubridate", "snakecase")
+pkgs <- c(
+  "devtools",
+  "tidyverse",
+  "RMariaDB",
+  "DBI",
+  "readr",
+  "pander",
+  "na.tools",
+  "ggimage",
+  "devtools",
+  "teamcolors",
+  "glue",
+  "animate",
+  "dplyr",
+  "tictoc",
+  "animation",
+  "gt",
+  "DT",
+  "ggthemes",
+  "bbplot",
+  "ggtext",
+  "ggforce",
+  "ggridges",
+  "ggrepel",
+  "ggbeeswarm",
+  "extrafont",
+  "RCurl",
+  "xml2",
+  "rvest",
+  "jsonlite",
+  "foreach",
+  "lubridate",
+  "snakecase"
+)
 
 ##install.packages(c("devtools", "tidyverse", "readr", "pander", "na.tools", "ggimage", "devtools", "teamcolors", "glue", "animate", "dplyr", "tictoc", "animation"))
 ##download https://downloads.mariadb.org/connector-c/

@@ -1,9 +1,9 @@
 {
-    "path" : "~/Documents/dev/hockey",
-    "sortOrder" : [
+    "path": "~/Documents/dev/hockey",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         }
     ]
 }
