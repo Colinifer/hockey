@@ -1,5 +1,5 @@
-# Packages ----------------------------------------------------------------
-
+# Packages & Init Setup ---------------------------------------------------
+proj_name <- "hockey"
 pkgs <- c(
   "devtools",
   "tidyverse",
@@ -34,41 +34,21 @@ pkgs <- c(
   "lubridate",
   "snakecase"
 )
-
-##install.packages(c("devtools", "tidyverse", "readr", "pander", "na.tools", "ggimage", "devtools", "teamcolors", "glue", "animate", "dplyr", "tictoc", "animation"))
-##download https://downloads.mariadb.org/connector-c/
-
 installed_packages <- pkgs %in%
   rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
-invisible(lapply(pkgs, library, character.only = TRUE))
+lapply(pkgs, library, character.only = TRUE)
 
-# Initialize Working Directory --------------------------------------------
+rm(pkgs, installed_packages)
 
-setwd("~/")
-gid <- paste(getwd())
-gid
-device <- ""
+source("../initR/init.R")
+fx.setdir(proj_name)
 
-if (gid == "/Volumes/HDD/Users/colinwelsh") {
-  ## Maverick - MBP
-  setwd("~/Documents/dev/hockey")
-  device <- "Maverick (MBP)"
-} else if (gid == "/Users/ColinWelsh") {
-  ## Goose - iMac
-  setwd("~/Documents/dev/hockey")
-  device <- "Goose (iMac)"
-} else if (gid == "/home/rstudio-user") {
-  ## RStudio Cloud
-  setwd("/cloud/project")
-  device <- "RStudio Cloud"
-}
-print(paste(device, "is ready for some hockey", sep = " "))
-rm(gid, device)
-
-# Create Items ------------------------------------------------------------
+# Create standard objects -------------------------------------------------
+source("../initR/con.R")
+dbListTables(con)
 
 userYear <- 2019
 userDate <- Sys.Date()
