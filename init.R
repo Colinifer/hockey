@@ -12,8 +12,8 @@ pkgs <- c(
   "devtools",
   "teamcolors",
   "glue",
-  "animate",
   "dplyr",
+  "RCurl",
   "tictoc",
   "animation",
   "gt",
@@ -50,8 +50,10 @@ fx.setdir(proj_name)
 source("../initR/con.R")
 dbListTables(con)
 
-userYear <- 2019
+userYear <- substr(Sys.Date(), 1, 4)
 userDate <- Sys.Date()
 
 today <- format(Sys.Date(), "%Y-%d-%m")
 source("EH_scrape_functions.R")
+u.scrape_interval <- 100
+source("playground/addToTable.R")

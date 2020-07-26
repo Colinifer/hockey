@@ -6,6 +6,7 @@ if (userYear <= 2019) {
   schedule <- sc.scrape_schedule(start_date = paste(userYear, "-10-01", sep = ""), end_date = paste(userYear + 1, "-07-01", sep = ""), print_sched = TRUE)
   
   write.csv(schedule, file = fschedule, row.names = FALSE)
+  dbWriteTable(con, )
   userYear = userYear + 1
 }
 
