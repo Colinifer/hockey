@@ -1,5 +1,8 @@
 # Packages & Init Setup ---------------------------------------------------
 proj_name <- "hockey"
+
+# devtools::install_github('bbc/bbplot')
+
 pkgs <- c(
   "devtools",
   "tidyverse",
@@ -32,7 +35,8 @@ pkgs <- c(
   "jsonlite",
   "foreach",
   "lubridate",
-  "snakecase"
+  "snakecase",
+  "nhlapi"
 )
 installed_packages <- pkgs %in%
   rownames(installed.packages())
