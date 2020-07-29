@@ -44,8 +44,9 @@ if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
 lapply(pkgs, library, character.only = TRUE)
-
 rm(pkgs, installed_packages)
+
+# Initialize Working Directory --------------------------------------------
 
 source("../initR/init.R")
 fx.setdir(proj_name)
