@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 17.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 400 675" style="enable-background:new 0 0 400 675;" width="400" height="675" xml:space="preserve">
+<style type="text/css">
+	.st0{display:none;}
+	.st1{clip-path:url(#XMLID_3_);fill:none;stroke:#E30613;}
+	.st2{clip-path:url(#XMLID_3_);fill:none;stroke:#1D71B8;stroke-width:2;}
+	.st3{clip-path:url(#XMLID_3_);fill:none;stroke:#E30613;stroke-width:2;}
+	.st4{fill:none;stroke:#E30613;}
+	.st5{fill:#fff;stroke:#E30613;}
+	.st6{fill:#E30613;}
+	.st7{fill:#5AC0C9;stroke:#E30613;}
+	.st8{fill:none;stroke:#1D71B8;}
+	.st9{fill:#B8CBEB;stroke:#000;}
+	.st10{font-family:'LiberationSans','Arial','Sans';}
+	.st11{font-size:8px;}
+</style>
+<g id="diagram">
+	<g>
+		<defs>
+			<path id="XMLID_1_" d="M358,582.2c0,45.3-36.7,82-82,82H114.1c-45.3,0-82-36.7-82-82V94.5c0-45.3,36.7-82,82-82H276
+				c45.3,0,82,36.7,82,82V582.2z"/>
+		</defs>
+		<use xlink:href="#XMLID_1_"  style="overflow:visible;fill:#FFFFFF;"/>
+		<clipPath id="XMLID_3_">
+			<use xlink:href="#XMLID_1_"  style="overflow:visible;"/>
+		</clipPath>
+		<line class="st1" x1="40" y1="56" x2="346" y2="56"/>
+		<line class="st1" x1="42" y1="621" x2="348" y2="621"/>
+		<line class="st2" x1="33" y1="243" x2="358" y2="243"/>
+		<line class="st2" x1="33" y1="434" x2="358" y2="434"/>
+		<line class="st3" x1="33" y1="338" x2="358" y2="338"/>
+		<use xlink:href="#XMLID_1_"  style="overflow:visible;fill:none;stroke:#000000;"/>
+	</g>
+	<g>
+		<line class="st4" x1="64" y1="111" x2="174" y2="111"/>
+		<line class="st4" x1="64" y1="130" x2="174" y2="130"/>
+		<circle class="st5" cx="119" cy="120" r="49"/>
+		<polyline class="st4" points="116.4,101.2 116.4,113.4 107.2,113.4 		"/>
+		<polyline class="st4" points="121.8,101.2 121.8,113.4 130.9,113.4 		"/>
+		<polyline class="st4" points="116.4,139.1 116.4,126.9 107.2,126.9 		"/>
+		<polyline class="st4" points="121.8,139.1 121.8,126.9 130.9,126.9 		"/>
+		<circle class="st6" cx="119" cy="120" r="4"/>
+	</g>
+	<g>
+		<line class="st4" x1="326" y1="111" x2="216" y2="111"/>
+		<line class="st4" x1="326" y1="130" x2="216" y2="130"/>
+		<circle class="st5" cx="271" cy="120.2" r="49"/>
+		<polyline class="st4" points="274,101 274,113 283,113 		"/>
+		<polyline class="st4" points="268,101 268,113 259,113 		"/>
+		<polyline class="st4" points="274,139 274,127 283,127 		"/>
+		<polyline class="st4" points="268,139 268,127 259,127 		"/>
+		<circle class="st6" cx="271" cy="120" r="4"/>
+	</g>
+	<g>
+		<line class="st4" x1="64" y1="564.4" x2="174.1" y2="564.4"/>
+		<line class="st4" x1="64" y1="545.1" x2="174.1" y2="545.1"/>
+		<circle class="st5" cx="119" cy="555" r="49"/>
+		<polyline class="st4" points="116,574 116,561.5 107,562 		"/>
+		<polyline class="st4" points="122,574 122,561.5 131,562 		"/>
+		<polyline class="st4" points="116,536 116,548 107,548 		"/>
+		<polyline class="st4" points="122,536 122,548 131,548 		"/>
+		<circle class="st6" cx="119" cy="555" r="4"/>
+	</g>
+	<g>
+		<line class="st4" x1="326" y1="564" x2="216" y2="564"/>
+		<line class="st4" x1="326" y1="545" x2="216" y2="545"/>
+		<circle class="st5" cx="271" cy="555" r="49"/>
+		<polyline class="st4" points="273.8,573.7 273.8,561.5 282.9,561.5 		"/>
+		<polyline class="st4" points="268.4,573.7 268.4,561.5 259.2,561.5 		"/>
+		<polyline class="st4" points="273.8,535.8 273.8,548 282.9,548 		"/>
+		<polyline class="st4" points="268.4,535.8 268.4,548 259.2,548 		"/>
+		<circle class="st6" cx="271" cy="555" r="4"/>
+	</g>
+	<g>
+		<path class="st7" d="M175.7,55.6c0,10.7,8.7,19.4,19.4,19.4s19.4-8.7,19.4-19.4H175.7z"/>
+		<polyline class="st4" points="181.7,64.4 181.7,68.7 185.1,68.7 		"/>
+		<polyline class="st4" points="208.5,64.4 208.5,68.7 205,68.7 		"/>
+	</g>
+	<g>
+		<path class="st7" d="M175.7,621.1c0-10.7,8.7-19.4,19.4-19.4s19.4,8.7,19.4,19.4H175.7z"/>
+		<polyline class="st4" points="181.7,612.2 181.7,608 185.1,608 		"/>
+		<polyline class="st4" points="208.5,612.2 208.5,608 205,608 		"/>
+	</g>
+	<circle class="st8" cx="195" cy="338" r="48"/>
+	<path class="st8" d="M358.2,369.9c-17.9,0-32.5-14.5-32.5-32.5s14.5-32.5,32.5-32.5V369.9z"/>
+	<circle class="st6" cx="119" cy="259" r="4"/>
+	<circle class="st6" cx="272" cy="259" r="4"/>
+	<circle class="st6" cx="119" cy="416" r="4"/>
+	<circle class="st6" cx="272" cy="416" r="4"/>
+	<rect x="19" y="186" class="st9" width="13" height="130"/>
+	<rect x="19" y="360" class="st9" width="14" height="130"/>
+	<rect x="358" y="243" class="st9" width="14" height="44"/>
+	<rect x="358" y="390" class="st9" width="14" height="44"/>
+	<rect x="358" y="305" class="st9" width="14" height="65"/>
+</g>
+<g id="text">
+	<text transform="matrix(1 0 0 1 86.8881 276.4442)"><tspan x="0" y="0" class="st10 st11">NEUTRAL ZONE</tspan><tspan x="0.2" y="9.6" class="st10 st11">FACEOFF SPOT</tspan></text>
+	<text transform="matrix(1 0 0 1 151.0733 350.8526)"><tspan x="0" y="0" class="st10 st11">CENTER ICE FACEOFF</tspan><tspan x="7.8" y="9.6" class="st10 st11">SPOT AND CIRCLE</tspan></text>
+	<text transform="matrix(1 0 0 1 253.6187 373.8521)" class="st10 st11">REFEREE CREASE</text>
+	<text transform="matrix(4.489659e-011 1 -1 4.489659e-011 388.9535 303.8958)"><tspan x="0" y="0" class="st10 st11">STOREKEEPER’S</tspan><tspan x="19.6" y="9.6" class="st10 st11">BENCH</tspan></text>
+	<text transform="matrix(4.489659e-011 1 -1 4.489659e-011 388.9535 246.5848)"><tspan x="0" y="0" class="st10 st11">PENALTY</tspan><tspan x="4.2" y="9.6" class="st10 st11">BENCH</tspan></text>
+	<text transform="matrix(1 0 0 1 49 353)" class="st10 st11">RED LINE</text>
+	<text transform="matrix(1 0 0 1 49 71)" class="st10 st11">GOAL LINE</text>
+	<text transform="matrix(1 0 0 1 49 448)" class="st10 st11">BLUE LINE</text>
+	<text transform="matrix(1 0 0 1 175 637)" class="st10 st11">GOAL LINE</text>
+	<text transform="matrix(4.489659e-011 -1 1 4.489659e-011 13.5881 284.9495)" class="st10 st11">PLAYER’S BENCH</text>
+</g>
+</svg>

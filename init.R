@@ -43,7 +43,7 @@ installed_packages <- pkgs %in%
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
-lapply(pkgs, library, character.only = TRUE)
+invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs, installed_packages)
 
 # Initialize Working Directory --------------------------------------------

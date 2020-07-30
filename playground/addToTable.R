@@ -36,15 +36,20 @@ game_ids <- schedule %>%
 
 # Get existing Game IDs from DB
 source("../initR/con.R")
-existing_game_ids <- dbGetQuery(con, "SELECT game_id FROM pbp_base;")
+existing_game_ids <- unique(dbGetQuery(con, "SELECT game_id FROM pbp_base;"))
 dbDisconnect(con)
-# Create int of latest IDs
-id_latest <- as.integer(substr(
-  existing_game_ids$game_id[nrow(existing_game_ids)],
-  7,
-  nchar(existing_game_ids$game_id[nrow(existing_game_ids)])
-))
 
+id_latest <- grep(existing_game_ids$game_id[nrow(existing_game_ids)], game_ids)
+# Create int of latest IDs
+# id_latest <- as.integer(
+#   substr(
+#   existing_game_ids$game_id[nrow(existing_game_ids)],
+#   7,
+#   nchar(existing_game_ids$game_id[nrow(existing_game_ids)])
+#   )
+# )
+
+tic("Total scrape")
 pbp_scrape <-
   sc.scrape_pbp(games = game_ids[(id_latest + 1):(id_latest + u.scrape_interval)]) # 300 was last
 
@@ -136,5 +141,6 @@ dbWriteTable(
 print("Successfully added report")
 toc()
 print("Successfully uploaded latest scrape to DB!")
+toc()
 toc()
 dbDisconnect(con)
