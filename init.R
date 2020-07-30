@@ -54,6 +54,7 @@ fx.setdir(proj_name)
 # Create standard objects -------------------------------------------------
 source("../initR/con.R")
 dbListTables(con)
+dbDisconnect(con)
 
 userYear <- substr(Sys.Date(), 1, 4)
 userDate <- Sys.Date()

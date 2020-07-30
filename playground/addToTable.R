@@ -40,6 +40,8 @@ existing_game_ids <- unique(dbGetQuery(con, "SELECT game_id FROM pbp_base;"))
 dbDisconnect(con)
 
 id_latest <- grep(existing_game_ids$game_id[nrow(existing_game_ids)], game_ids)
+
+id_latest <- grep("2013020039", game_ids)
 # Create int of latest IDs
 # id_latest <- as.integer(
 #   substr(
