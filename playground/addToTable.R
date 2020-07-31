@@ -10,11 +10,11 @@
 
 # dbWriteTable(con, value = dbReadTable(con, "2019schedule"), name = "schedule", append = TRUE)
 
-source("../initR/con.R")
+source(f.con)
 schedule <- dbGetQuery(
   con,
   "SELECT * FROM `hockey`.`schedule` WHERE (`season` > '2009') AND (`game_status` = 'Final') ORDER BY `game_id`"
-  )
+)
 dbDisconnect(con)
 
 game_ids <- schedule %>% 
@@ -35,13 +35,15 @@ game_ids <- schedule %>%
 # )
 
 # Get existing Game IDs from DB
-source("../initR/con.R")
-existing_game_ids <- unique(dbGetQuery(con, "SELECT game_id FROM pbp_base;"))
+source(f.con)
+existing_game_ids <- unique(dbGetQuery(con, "SELECT game_id FROM player_shifts;"))
 dbDisconnect(con)
 
 id_latest <- grep(existing_game_ids$game_id[nrow(existing_game_ids)], game_ids)
 
-id_latest <- grep("2013020039", game_ids)
+id_latest <- grep("2015020251", game_ids)
+
+# pbp_scrape <- sc.scrape_pbp(games = c(2015020250:2015020309))
 # Create int of latest IDs
 # id_latest <- as.integer(
 #   substr(
@@ -55,7 +57,7 @@ tic("Total scrape")
 pbp_scrape <-
   sc.scrape_pbp(games = game_ids[(id_latest + 1):(id_latest + u.scrape_interval)]) # 300 was last
 
-source("../initR/con.R")
+source(f.con)
 
 fx.append <- function(x){
   dbApp
@@ -70,7 +72,7 @@ dbWriteTable(
   value = pbp_scrape$game_info_df,
   name = "game_info",
   append = TRUE
-  )
+)
 print("Successfully added game_info")
 toc()
 tic("pbp_base")
@@ -79,7 +81,7 @@ dbWriteTable(
   value = pbp_scrape$pbp_base,
   name = "pbp_base",
   append = TRUE
-  )
+)
 print("Successfully added pbp_base")
 toc()
 tic("pbp_extras")
@@ -88,7 +90,7 @@ dbWriteTable(
   value = pbp_scrape$pbp_extras,
   name = "pbp_extras",
   append = TRUE
-  )
+)
 print("Successfully added pbp_extras")
 toc()
 tic("player_shifts")
@@ -97,7 +99,7 @@ dbWriteTable(
   value = pbp_scrape$player_shifts,
   name = "player_shifts",
   append = TRUE
-  )
+)
 print("Successfully added player_shifts")
 toc()
 tic("player_periods")

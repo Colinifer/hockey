@@ -52,7 +52,9 @@ source("../initR/init.R")
 fx.setdir(proj_name)
 
 # Create standard objects -------------------------------------------------
-source("../initR/con.R")
+f.con <- "../initR/con.R"
+
+source(f.con)
 dbListTables(con)
 dbDisconnect(con)
 
@@ -61,5 +63,5 @@ userDate <- Sys.Date()
 
 today <- format(Sys.Date(), "%Y-%d-%m")
 source("EH_scrape_functions.R")
-u.scrape_interval <- 100
+u.scrape_interval <- 250
 source("playground/addToTable.R")
