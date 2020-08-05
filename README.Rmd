@@ -1,0 +1,97 @@
+---
+  output: github_document
+---
+  
+  <!-- README.md is generated from README.Rmd. Please edit that file -->
+  
+  ```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-"
+)
+```
+## Load dependencies
+Load and install all necessary packages
+```{r}
+proj_name <- "hockey"
+pkgs <- c(
+  "devtools",
+  "tidyverse",
+  "RMariaDB",
+  "DBI",
+  "readr",
+  "pander",
+  "na.tools",
+  "ggimage",
+  "devtools",
+  "teamcolors",
+  "glue",
+  "dplyr",
+  "RCurl",
+  "tictoc",
+  "animation",
+  "gt",
+  "DT",
+  "ggthemes",
+  "bbplot",
+  "ggtext",
+  "ggforce",
+  "ggridges",
+  "ggrepel",
+  "ggbeeswarm",
+  "extrafont",
+  "RCurl",
+  "xml2",
+  "rvest",
+  "jsonlite",
+  "foreach",
+  "lubridate",
+  "snakecase",
+  "nhlapi"
+)
+installed_packages <- pkgs %in%
+  rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(pkgs[!installed_packages])
+}
+if (any("bbplot" %in%
+  rownames(installed.packages()) == FALSE)) {
+  library(devtools)
+  devtools::install_github('bbc/bbplot')
+}
+invisible(lapply(pkgs, library, character.only = TRUE))
+rm(pkgs, installed_packages)
+```
+
+## Initialize Working Directory
+Set up correct file paths
+```{r}
+source("../initR/init.R")
+fx.setdir(proj_name)
+```
+
+## Create standard objects
+Variables to connect to 
+```{r}
+f.con <- "../initR/con.R"
+
+source(f.con)
+dbListTables(con)
+dbDisconnect(con)
+
+userYear <- substr(Sys.Date(), 1, 4)
+userDate <- Sys.Date()
+
+today <- format(Sys.Date(), "%Y-%d-%m")
+source("EH_scrape_functions.R")
+```
+How many games should we scrape at once?
+```{r}
+u.scrape_interval <- 250
+```
+
+## Create standard objects
+```{r}
+# source("playground/addToTable.R")
+```
