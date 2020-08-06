@@ -43,6 +43,11 @@ installed_packages <- pkgs %in%
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
+if (any("bbplot" %in%
+        rownames(installed.packages()) == FALSE)) {
+  library(devtools)
+  devtools::install_github('bbc/bbplot')
+}
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs, installed_packages)
 
