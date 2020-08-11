@@ -68,5 +68,7 @@ userDate <- Sys.Date()
 
 today <- format(Sys.Date(), "%Y-%d-%m")
 source("EH_scrape_functions.R")
-u.scrape_interval <- 250
-source("playground/addToTable.R")
+
+# If scrape isn't caught up
+# u.scrape_interval <- 250
+# source("playground/addToTable.R")
