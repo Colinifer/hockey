@@ -1,5 +1,6 @@
 # Packages & Init Setup ---------------------------------------------------
 proj_name <- "hockey"
+# setwd("~/Documents/dev/hockey")
 
 # devtools::install_github('bbc/bbplot')
 
@@ -68,6 +69,10 @@ userDate <- Sys.Date()
 
 today <- format(Sys.Date(), "%Y-%d-%m")
 source("EH_scrape_functions.R")
+source("functions/add_to_table.R")
+
+f.scrape <- paste0("data/", list.files(path = "data/", pattern = "pbp_scrape"))
+# f.scrape[3] %>% lapply(fx.add_to_table)
 
 # If scrape isn't caught up
 # u.scrape_interval <- 250
