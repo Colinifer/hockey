@@ -3,6 +3,7 @@ proj_name <- "hockey"
 # setwd("~/Documents/dev/hockey")
 
 # devtools::install_github('bbc/bbplot')
+# devtools::install_github('war-on-ice/nhlplot')
 
 pkgs <- c(
   "devtools",
@@ -37,7 +38,8 @@ pkgs <- c(
   "foreach",
   "lubridate",
   "snakecase",
-  "nhlapi"
+  "nhlapi",
+  "nhlplot"
 )
 installed_packages <- pkgs %in%
   rownames(installed.packages())
