@@ -79,3 +79,12 @@ f.scrape <- paste0("data/", list.files(path = "data/", pattern = "pbp_scrape"))
 # If scrape isn't caught up
 # u.scrape_interval <- 250
 # source("playground/addToTable.R")
+
+
+# http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster
+# http://www.nhl.com/scores/htmlreports/20192020/PL030113.HTM # Play by Play
+# http://www.nhl.com/scores/htmlreports/20192020/GS020113.HTM # Game Summary
+# http://www.nhl.com/scores/htmlreports/20192020/TV030113.HTM # Visitor TOI Shift Report
+# http://www.nhl.com/scores/htmlreports/20192020/TH030113.HTM # Home TOI Shift Report
+# http://www.nhl.com/scores/htmlreports/20192020/SS030113.HTM # Shot Summary
+# http://www.nhl.com/scores/htmlreports/20192020/ES020967.HTM # Event Summary
