@@ -1,14 +1,17 @@
 ###################################################################################
-#####         Evolving-Hockey Scraper         ||          2019-05-18          #####
+#####                         Evolving-Hockey Scraper                         #####
 ###################################################################################
 
-## Current as of: R version 3.6.0 (2019-04-26)
+## Current as of: R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+##
+## Tidyverse package version: 1.3.0
+## dplyr package version: 1.0.2
 
 
 ## Dependencies
-library(RCurl); library(xml2); library(rvest); library(jsonlite); library(foreach)
-library(lubridate)
-library(tidyverse) # -- specifically: stringr, readr, tidyr, and dplyr
+# library(RCurl); library(xml2); library(rvest); library(jsonlite); library(foreach)
+# library(lubridate)
+# library(tidyverse) -- specifically: stringr, readr, tidyr, and dplyr
 
 
 ## Set for numeric/text formatting within scraper
@@ -16,10 +19,6 @@ options(
   scipen = 999, 
   stringsAsFactors = FALSE
 )
-
-
-
-## *** Notes & examples provided below all functions
 
 
 
@@ -66,18 +65,19 @@ dead_games <- c(
   "2007020011", "2007021178", 
   "2008020259", "2008020409", "2008021077", "2008030311", 
   "2009020081", "2009020658", "2009020885", 
-  "2010020124"#, 
+  "2010020124",
+  "2019030016"    ## too many shift errors to fix
   # "2019020678"  ## this game has been fixed
 )
 
 
 ## Create Team IDs (to use for API team triCodes)
 Team_ID <- data.frame(
-  Team = 
-    c("N.J", "NYI", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "ATL", "CAR", "FLA", "T.B", 
-      "WSH", "CHI", "DET", "NSH", "STL", "CGY", "COL", "EDM", "VAN", "ANA", "DAL", "L.A", "ARI", "S.J", 
-      "CBJ", "MIN", "WPG", "ARI", "VGK"
-    ), 
+  Team = c(
+    "N.J", "NYI", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "ATL", "CAR", "FLA", "T.B", 
+    "WSH", "CHI", "DET", "NSH", "STL", "CGY", "COL", "EDM", "VAN", "ANA", "DAL", "L.A", "ARI", "S.J", 
+    "CBJ", "MIN", "WPG", "ARI", "VGK"
+  ), 
   ID = c(seq(1:33))
 ) %>% 
   mutate(ID = ifelse(ID == 31, 52, ifelse(ID == 32, 53, ifelse(ID == 33, 54, ID))))
@@ -90,54 +90,52 @@ Team_ID_vec <- c(
 )
 
 full_team_names <- data.frame(
-  fullTeam = 
-    c("ANAHEIM DUCKS", "ARIZONA COYOTES", "ATLANTA THRASHERS", "BOSTON BRUINS", "BUFFALO SABRES", "CALGARY FLAMES", "CAROLINA HURRICANES", 
-      "CHICAGO BLACKHAWKS", "COLORADO AVALANCHE", "COLUMBUS BLUE JACKETS", "DALLAS STARS", "DETROIT RED WINGS", "EDMONTON OILERS", 
-      "FLORIDA PANTHERS", "LOS ANGELES KINGS", "MINNESOTA WILD", "MONTREAL CANADIENS", "CANADIENS MONTREAL", "NASHVILLE PREDATORS", "NEW JERSEY DEVILS", 
-      "NEW YORK ISLANDERS", "NEW YORK RANGERS", "OTTAWA SENATORS", "PHILADELPHIA FLYERS", "PHOENIX COYOTES", "PITTSBURGH PENGUINS", "SAN JOSE SHARKS", 
-      "ST. LOUIS BLUES", "TAMPA BAY LIGHTNING", "TORONTO MAPLE LEAFS", "VANCOUVER CANUCKS", "VEGAS GOLDEN KNIGHTS", "WASHINGTON CAPITALS", 
-      "WINNIPEG JETS"
-    ), 
-  Team = 
-    c("ANA", "ARI", "ATL", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET", "EDM", "FLA", "L.A", 
-      "MIN", "MTL", "MTL", "NSH", "N.J", "NYI", "NYR", "OTT", "PHI", "ARI", "PIT", "S.J", "STL", "T.B", "TOR", "VAN", "VGK", "WSH", "WPG"
-    ), 
-  partTeam = 
-    c("DUCKS", "COYOTES", "THRASHERS", "BRUINS", "SABRES", "FLAMES", "HURRICANES", 
-      "BLACKHAWKS", "AVALANCHE", "BLUE JACKETS", "STARS", "RED WINGS", "OILERS", 
-      "PANTHERS", "KINGS", "WILD", "CANADIENS", "MONTREAL", "PREDATORS", "DEVILS", 
-      "ISLANDERS", "RANGERS", "SENATORS", "FLYERS", "COYOTES", "PENGUINS", "SHARKS", 
-      "BLUES", "LIGHTNING", "MAPLE LEAFS", "CANUCKS", "GOLDEN KNIGHTS", "CAPITALS", 
-      "JETS"
-    )
+  fullTeam = c(
+    "ANAHEIM DUCKS", "ARIZONA COYOTES", "ATLANTA THRASHERS", "BOSTON BRUINS", "BUFFALO SABRES", "CALGARY FLAMES", "CAROLINA HURRICANES", 
+    "CHICAGO BLACKHAWKS", "COLORADO AVALANCHE", "COLUMBUS BLUE JACKETS", "DALLAS STARS", "DETROIT RED WINGS", "EDMONTON OILERS", 
+    "FLORIDA PANTHERS", "LOS ANGELES KINGS", "MINNESOTA WILD", "MONTREAL CANADIENS", "CANADIENS MONTREAL", "NASHVILLE PREDATORS", "NEW JERSEY DEVILS", 
+    "NEW YORK ISLANDERS", "NEW YORK RANGERS", "OTTAWA SENATORS", "PHILADELPHIA FLYERS", "PHOENIX COYOTES", "PITTSBURGH PENGUINS", "SAN JOSE SHARKS", 
+    "ST. LOUIS BLUES", "TAMPA BAY LIGHTNING", "TORONTO MAPLE LEAFS", "VANCOUVER CANUCKS", "VEGAS GOLDEN KNIGHTS", "WASHINGTON CAPITALS", 
+    "WINNIPEG JETS"
+  ), 
+  Team = c(
+    "ANA", "ARI", "ATL", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET", "EDM", "FLA", "L.A", 
+    "MIN", "MTL", "MTL", "NSH", "N.J", "NYI", "NYR", "OTT", "PHI", "ARI", "PIT", "S.J", "STL", "T.B", "TOR", "VAN", "VGK", "WSH", "WPG"
+  ), 
+  partTeam = c(
+    "DUCKS", "COYOTES", "THRASHERS", "BRUINS", "SABRES", "FLAMES", "HURRICANES", 
+    "BLACKHAWKS", "AVALANCHE", "BLUE JACKETS", "STARS", "RED WINGS", "OILERS", 
+    "PANTHERS", "KINGS", "WILD", "CANADIENS", "MONTREAL", "PREDATORS", "DEVILS", 
+    "ISLANDERS", "RANGERS", "SENATORS", "FLYERS", "COYOTES", "PENGUINS", "SHARKS", 
+    "BLUES", "LIGHTNING", "MAPLE LEAFS", "CANUCKS", "GOLDEN KNIGHTS", "CAPITALS", 
+    "JETS"
+  )
 )
 
 ## ESPN's team IDs & event type codes
 ESPN_team_IDs <- data.frame(
-  team_ID = 
-    as.numeric(c(
-      "25", "24", "1", "2", "7", "29", "3", "4", "17", "9", "5", "6", "26", "8", 
-      "30", "10", "11", "27", "12", "13", "14", "15", "16", "18", "19", "20", "21", 
-      "22", "37", "28", "23"
-    )), 
-  Team = 
-    c("ANA", "ARI", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", 
-      "L.A", "MIN", "MTL", "N.J", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "S.J", "STL", "T.B", 
-      "TOR", "VAN", "VGK", "WPG", "WSH"
-    )
+  team_ID = as.numeric(c(
+    "25", "24", "1", "2", "7", "29", "3", "4", "17", "9", "5", "6", "26", "8", 
+    "30", "10", "11", "27", "12", "13", "14", "15", "16", "18", "19", "20", "21", 
+    "22", "37", "28", "23"
+  )), 
+  Team = c(
+    "ANA", "ARI", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", 
+    "L.A", "MIN", "MTL", "N.J", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "S.J", "STL", "T.B", 
+    "TOR", "VAN", "VGK", "WPG", "WSH"
+  )
 )
 
 
 ESPN_codes <- data.frame(
-  event = 
-    c("FAC", "HIT", "GvTk", "GOAL", "SHOT", "MISS", "BLOCK", "PENL","STOP", "PRDY", "PSTR", "PEND", 
-      "PERD", "SOC", "GEND", "SOut","error", "TAKE", "GIVE", "early intermission", "nothing", "nothing"
-    ),
-  code = 
-    as.character(c(
-      502, 503, 504, 505, 506, 507, 508, 509, 516, 517, 518, 519, 520, 521, 522, 0, 9999, 
-      1401, 1402, -2147483648, 1, 5
-    ))
+  event = c(
+    "FAC", "HIT", "GvTk", "GOAL", "SHOT", "MISS", "BLOCK", "PENL","STOP", "PRDY", "PSTR", "PEND", 
+    "PERD", "SOC", "GEND", "SOut","error", "TAKE", "GIVE", "early intermission", "nothing", "nothing"
+  ),
+  code = as.character(c(
+    502, 503, 504, 505, 506, 507, 508, 509, 516, 517, 518, 519, 520, 521, 522, 0, 9999, 
+    1401, 1402, -2147483648, 1, 5
+  ))
 )
 
 
@@ -254,7 +252,7 @@ sc.scrape_schedule <- function(start_date = Sys.Date(), end_date = Sys.Date(), p
   schedule_current <- bind_schedule %>% 
     arrange(game_id) %>% 
     # filter(session != "PR") %>%   ## filter out preseason games
-    filter(session %in% c("R", "P")) %>%  ## only scrape regular season and playoff games
+    filter(session %in% c("PR", "R", "P")) %>%  ## only scrape regular season and playoff games
     mutate(
       home_team_id = Team_ID$Team[match(home_team_id, Team_ID$ID)], 
       away_team_id = Team_ID$Team[match(away_team_id, Team_ID$ID)], 
@@ -1455,6 +1453,8 @@ sc.prepare_events_HTM <- function(game_id_fun, season_id_fun, events_data, game_
         game_period == 5 & game_info_data$session == "P" ~ game_seconds + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ game_seconds + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ game_seconds + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ game_seconds + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ game_seconds + 9600, 
         TRUE ~ game_seconds
       ), 
       home_team =    game_info_data$home_team, 
@@ -1562,6 +1562,8 @@ sc.prepare_events_API <- function(game_id_fun, events_data_API, game_info_data) 
         game_period == 5 & game_info_data$session == "P" ~ game_seconds + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ game_seconds + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ game_seconds + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ game_seconds + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ game_seconds + 9600, 
         TRUE ~ game_seconds
       ), 
       event_type = toupper(gsub("gamecenter", "", event_type)),  ## remove excessive "gamecenter" text and ensure capitalization
@@ -1820,6 +1822,8 @@ sc.shifts_parse <- function(game_id_fun, season_id_fun, shifts_list, roster_data
         game_period == 5 & game_info_data$session == "P" ~ seconds_start + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ seconds_start + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ seconds_start + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ seconds_start + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ seconds_start + 9600, 
         TRUE ~ seconds_start
       ),
       shift_end =     gsub(" / .*", "", shift_end), 
@@ -1832,6 +1836,8 @@ sc.shifts_parse <- function(game_id_fun, season_id_fun, shifts_list, roster_data
         game_period == 5 & game_info_data$session == "P" ~ seconds_end + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ seconds_end + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ seconds_end + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ seconds_end + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ seconds_end + 9600, 
         TRUE ~ seconds_end
       ), 
       seconds_duration = seconds_end - seconds_start
@@ -2074,6 +2080,8 @@ sc.shifts_parse_API <- function(game_id_fun, shifts_list, roster_data, game_info
         game_period == 5 & game_info_data$session == "P" ~ seconds_start + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ seconds_start + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ seconds_start + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ seconds_start + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ seconds_start + 9600, 
         TRUE ~ seconds_start
       ), 
       seconds_end = suppressWarnings(period_to_seconds(ms(endTime))), 
@@ -2085,6 +2093,8 @@ sc.shifts_parse_API <- function(game_id_fun, shifts_list, roster_data, game_info
         game_period == 5 & game_info_data$session == "P" ~ seconds_end + 4800, 
         game_period == 6 & game_info_data$session == "P" ~ seconds_end + 6000, 
         game_period == 7 & game_info_data$session == "P" ~ seconds_end + 7200, 
+        game_period == 8 & game_info_data$session == "P" ~ seconds_end + 8400, 
+        game_period == 9 & game_info_data$session == "P" ~ seconds_end + 9600, 
         TRUE ~ seconds_end
       ), 
       seconds_duration = seconds_end - seconds_start
@@ -2369,11 +2379,13 @@ sc.shifts_finalize <- function(game_id_fun, shifts_parse_data, events_data_HTM, 
             data.frame()
           
         } else {
-          new_goalie_shift_home <- data.frame(matrix(
-            ncol = ncol(shifts_parsed), 
-            nrow = 0
-          ))
-          colnames(new_goalie_shift_home) <- colnames(shifts_parsed)
+          # new_goalie_shift_home <- data.frame(matrix(
+          #   ncol = ncol(shifts_parsed), 
+          #   nrow = 0
+          #   ))
+          # colnames(new_goalie_shift_home) <- colnames(shifts_parsed)
+          
+          new_goalie_shift_home <- data.frame()
           
         }
         
@@ -2452,11 +2464,13 @@ sc.shifts_finalize <- function(game_id_fun, shifts_parse_data, events_data_HTM, 
             data.frame()
           
         } else {
-          new_goalie_shift_away <- data.frame(matrix(
-            ncol = ncol(shifts_parsed), 
-            nrow = 0
-          ))
-          colnames(new_goalie_shift_away) <- colnames(shifts_parsed)
+          # new_goalie_shift_away <- data.frame(matrix(
+          #   ncol = ncol(shifts_parsed), 
+          #   nrow = 0
+          #   ))
+          # colnames(new_goalie_shift_away) <- colnames(shifts_parsed)
+          
+          new_goalie_shift_away <- data.frame()
           
         }
         
@@ -3282,7 +3296,8 @@ sc.pbp_combine <- function(events_data, shifts_data, roster_data, game_info_data
       home_on_4 = colnames(is_on_matrix_home)[unique(col)[4]],
       home_on_5 = colnames(is_on_matrix_home)[unique(col)[5]],
       home_on_6 = colnames(is_on_matrix_home)[unique(col)[6]], 
-      home_on_7 = colnames(is_on_matrix_home)[unique(col)[7]]
+      home_on_7 = colnames(is_on_matrix_home)[unique(col)[7]], 
+      .groups = "drop"  ## added to prevent warning message in scraper verbose output
     ) %>%
     data.frame()
   
@@ -3299,7 +3314,8 @@ sc.pbp_combine <- function(events_data, shifts_data, roster_data, game_info_data
       away_on_4 = colnames(is_on_matrix_away)[unique(col)[4]],
       away_on_5 = colnames(is_on_matrix_away)[unique(col)[5]],
       away_on_6 = colnames(is_on_matrix_away)[unique(col)[6]], 
-      away_on_7 = colnames(is_on_matrix_away)[unique(col)[7]]
+      away_on_7 = colnames(is_on_matrix_away)[unique(col)[7]], 
+      .groups = "drop"  ## added to prevent warning message in scraper verbose output
     ) %>%
     data.frame()
   
@@ -4730,3 +4746,6 @@ sc.pbp_index <- function(data) {
 
 
 ## ------------------------------------------ ##
+
+
+
