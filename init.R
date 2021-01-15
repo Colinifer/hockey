@@ -57,6 +57,9 @@ if (any('bbplot' %in%
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs, installed_packages)
 
+
+options(tibble.print_min=25)
+
 # Initialize Working Directory --------------------------------------------
 
 fx.setdir(proj_name)
@@ -78,7 +81,7 @@ date <- Sys.Date()
 
 today <- format(Sys.Date(), '%Y-%d-%m')
 source('EH_scrape_functions.R')
-source('functions/add_to_table.R')
+# source('functions/add_to_table.R')
 
 f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
 # f.scrape[3] %>% lapply(fx.add_to_table)
@@ -86,6 +89,18 @@ f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
 # If scrape isn't caught up
 # u.scrape_interval <- 250
 # source('playground/addToTable.R')
+
+
+schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
+game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
+pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
+pbp_extras_ds <- open_dataset('data/pbp_extras', partitioning = 'year')
+player_shifts_ds <- open_dataset('data/player_shifts', partitioning = 'year')
+player_periods_ds <- open_dataset('data/player_periods', partitioning = 'year')
+roster_ds <- open_dataset('data/roster/', partitioning = 'year')
+scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
+events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
+report_ds <- open_dataset('data/report/', partitioning = 'year')
 
 
 # http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster

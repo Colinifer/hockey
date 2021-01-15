@@ -1,5 +1,8 @@
 library(arrow)
 
+
+# Create Parquet files ----------------------------------------------------
+
 lapply(1:5, function(x){
   pbp_base <- readRDS(
     glue(
@@ -99,22 +102,15 @@ lapply(1:5, function(x){
   })
 })
 
-game_info <- open_dataset('data/game_info/', partitioning = 'year')
-pbp <- open_dataset('data/pbp_base/', partitioning = 'year')
-pbp_extras <- open_dataset('data/pbp_extras', partitioning = 'year')
-player_shifts <- open_dataset('data/player_shifts', partitioning = 'year')
-player_periods <- open_dataset('data/player_periods', partitioning = 'year')
-roster <- open_dataset('data/roster/', partitioning = 'year')
-scratches <- open_dataset('data/scratches/', partitioning = 'year')
-events_summary <- open_dataset('data/events_summary/', partitioning = 'year')
-report <- open_dataset('data/report/', partitioning = 'year')
 
-game_ids <- game_info %>% 
-  filter(season == '20192020' & (home_team == 'CHI' | away_team == 'CHI')) %>% 
+# Retrieve data -----------------------------------------------------------
+
+game_ids <- game_info_ds %>% 
+  filter(year == '20202021') %>% 
   collect() %>% 
   pull(game_id)
 
-available_game_ids <- game_info %>% 
+available_game_ids <- game_info_ds %>% 
   filter() %>% 
   collect() %>% 
   pull(game_id) %>% 
@@ -129,14 +125,15 @@ all_game_ids <- c(2010020001:2010021230,
   2016020001:2016021230,
   2017020001:2017021271,
   2018020001:2018021271,
-  2019020001:2019021271)
+  2019020001:2019021271,
+  2010020002:2020020868)
 
 '%notin%' <- Negate('%in%')
 
 all_game_ids %notin% available_game_ids
 
-pbp %>% 
-  filter(game_id == game_ids[1]) %>% 
+pbp_df <- pbp_base_ds %>% 
+  filter(game_id %in% game_ids) %>%
   collect() %>% 
   as_tibble() %>% 
   group_by(game_id) %>% 
@@ -148,6 +145,21 @@ pbp %>%
     pen_d =  if_else(event_type == 'PENL', event_player_2, ''),
     shot = if_else(event_type == 'SHOT', event_player_1, ''),
     block = if_else(event_type == 'BLOCK', event_player_2, ''),
+    corsi_event = ifelse(event_type %in% st.corsi_events, 1, 0),
+    home_corsi = case_when(corsi_event == 1 &
+                                 ((event_type %in% st.corsi_events &
+                                     event_team == home_team)) == TRUE ~ 1,
+                               corsi_event == 1 &
+                                 ((event_type %in% st.corsi_events &
+                                     event_team != home_team)) == TRUE ~ -1,
+                               TRUE ~ 0),
+    away_corsi = case_when(corsi_event == 1 &
+                                 ((event_type %in% st.corsi_events &
+                                     event_team == away_team)) == TRUE ~ 1,
+                               corsi_event == 1 &
+                                 ((event_type %in% st.corsi_events &
+                                     event_team != away_team)) == TRUE ~ -1,
+                               TRUE ~ 0),
     faceoff_w = if_else(
       event_type == 'FAC',
       if_else(event_team == away_team, event_player_1, event_player_2),
@@ -156,26 +168,148 @@ pbp %>%
       event_type == 'FAC',
       if_else(event_team != away_team, event_player_1, event_player_2),
       '')
-  ) %>% 
-  select(event_type, goal, a1, a2, shot, faceoff_w, faceoff_l)
+  )
+  # select(home_team, away_team, event_type, event_team, goal, a1, a2, shot, faceoff_w, faceoff_l) 
 
-events_summary %>% 
-  filter(game_id %in% game_ids) %>% 
-  collect() %>% 
-  as_tibble() %>% 
+faceoffs <- pbp_df %>%
+  filter(faceoff_w != '') %>%
+  arrange(faceoff_w) %>%
+  group_by(game_id, faceoff_w) %>%
+  mutate(faceoff_w_tot = n()) %>%
+  filter(row_number() == n()) %>%
+  select(home_team, away_team, event_team, faceoff_w, faceoff_w_tot)
+
+# Create penalties drawn
+pen_d <- pbp_df %>%
+  filter(pen_d != '') %>%
+  arrange(pen_d) %>%
+  group_by(game_id, pen_d) %>%
+  mutate(pen_d_tot = n()) %>%
+  filter(row_number() == n()) %>%
+  select(home_team, away_team, event_team, pen_d, pen_d_tot)
+
+# Create corsi events (Shots + Blocks + Misses)
+corsi <- pbp_df %>%
+  filter(corsi_event == 1) %>%
+  select(event_index,
+         event_type,
+         contains('home'),
+         -home_goalie,
+         -home_team,
+         -home_skaters,
+         -home_score,
+         corsi = home_corsi,
+         corsi_event,
+         game_strength_state) %>% 
+  pivot_longer(
+    cols = contains('home_on')
+  ) %>% 
+  mutate(
+    corsi_for = ifelse(corsi > 0, 1, NA),
+    corsi_against = ifelse(corsi < 0, 1, NA),
+    goal_for = ifelse(corsi > 0 & event_type == 'GOAL', 1, NA),
+    goal_against = ifelse(corsi < 0 & event_type == 'GOAL', 1, NA),
+    full_ev_corsi_for = ifelse(corsi > 0 & game_strength_state == '5v5', 1, NA),
+    full_ev_corsi_against = ifelse(corsi < 0 & game_strength_state == '5v5', 1, NA),
+    full_ev_goal_for = ifelse(corsi > 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA),
+    full_ev_goal_against = ifelse(corsi < 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA)
+  ) %>% 
+  rbind(
+    pbp_df %>%
+      filter(corsi_event == 1) %>%
+      select(event_index,
+             event_type,
+             contains('away'),
+             -away_goalie,
+             -away_team,
+             -away_skaters,
+             -away_score,
+             corsi = away_corsi,
+             corsi_event,
+             game_strength_state) %>% 
+      pivot_longer(
+        cols = contains('away_on')
+      ) %>% 
+      mutate(
+        corsi_for = ifelse(corsi > 0, 1, NA),
+        corsi_against = ifelse(corsi < 0, 1, NA),
+        goal_for = ifelse(corsi > 0 & event_type == 'GOAL', 1, NA),
+        goal_against = ifelse(corsi < 0 & event_type == 'GOAL', 1, NA),
+        full_ev_corsi_for = ifelse(corsi > 0 & game_strength_state == '5v5', 1, NA),
+        full_ev_corsi_against = ifelse(corsi < 0 & game_strength_state == '5v5', 1, NA),
+        full_ev_goal_for = ifelse(corsi > 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA),
+        full_ev_goal_against = ifelse(corsi < 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA)
+      )
+  ) %>% 
+  rename(
+    player = value
+  ) %>% 
+  filter(!is.na(player)) %>% 
+  select(-name) %>% 
+  group_by(game_id, player) %>% 
+  summarize(corsi_for = sum(corsi_for, na.rm = T),
+            corsi_against = sum(corsi_against, na.rm = T),
+            goals_for = sum(goal_for, na.rm = T),
+            goals_against = sum(goal_against, na.rm = T),
+            full_ev_corsi_for = sum(full_ev_corsi_for, na.rm = T),
+            full_ev_corsi_against = sum(full_ev_corsi_against, na.rm = T),
+            full_ev_goals_for = sum(full_ev_goal_for, na.rm = T),
+            full_ev_goals_against = sum(full_ev_goal_against, na.rm = T))
+
+events_summary_ds %>%
+  filter(game_id %in% game_ids) %>%
+  collect() %>%
+  as_tibble() %>%
+  # select(player, game_id, position) %>% 
+  left_join(pen_d %>% 
+              select(
+                game_id, 
+                pen_d_player = pen_d, 
+                pen_d = pen_d_tot),
+            by = c(
+              'game_id', 
+              'player' = 'pen_d_player')
+            ) %>% 
+  mutate(pen_d = ifelse(is.na(pen_d), 0, pen_d)) %>% 
+  left_join(corsi,
+            by = c(
+              'game_id', 
+              'player' = 'player')
+            ) %>% 
+  filter(position_type != 'G') %>% 
   mutate(gs = (0.75 * g) + # goals
            (0.7 * a) + # assists
            (0.075 * s) + # shots
            (0.05 * bs) + # blocked shots
-           (0.15 * PD) - # penalties drawn
+           (0.15 * pen_d) - # penalties drawn
            (0.15 * pen) + # penalties taken
            (0.01 * fw) - # faceoffs won
            (.01 * fl) + # faceoffs lost
-           (0.05 * CF) - # corsi for
-           (0.05 * CA) + # corsi against
-           (0.15 * GF) - # goals for
-           (0.15 * GA) # goals against
-         )
+           (0.05 * full_ev_corsi_for) - # corsi for
+           (0.05 * full_ev_corsi_against) + # corsi against
+           (0.15 * full_ev_goals_for) - # goals for
+           (0.15 * full_ev_goals_against) # goals against
+         ) %>% 
+  select(
+    player, 
+    g,
+    a,
+    gs, 
+    everything()
+    ) %>% 
+  arrange(-gs) %>% 
+  group_by(player) %>% 
+  summarise(games = n(),
+            g = sum(g, na.rm = T),
+            a = sum(a, na.rm = T),
+            pts = sum(g, a, na.rm = T),
+            gs_tot = sum(gs, na.rm = T),
+            team = first(team),
+            gsva = (median(gs, na.rm = T) + mean(gs, na.rm = T)) / 2
+            # gsva = mean(gs, na.rm = T)
+            ) %>% 
+  # filter(games > 20) %>% 
+  arrange(-gs_tot)
 
 # (0.75 * G) + (0.7 * A1) + (0.55 * A2) + (0.075 * SOG) + (0.05 * BLK) + (0.15 * PD) – (0.15 * PT) + (0.01 * FOW) – (0.01 * FOL) + (0.05 * CF) – (0.05 * CA) + (0.15 * GF) – (0.15* GA)
 
