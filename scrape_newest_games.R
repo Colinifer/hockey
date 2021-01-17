@@ -82,7 +82,6 @@ new_game_ids <- schedule_ds %>%
            game_status == 'Final' & 
            game_date <= Sys.Date()) %>% 
   collect() %>%
-  # slice(1:25) %>%
   pull(game_id)
 
 new_game_ids
@@ -96,6 +95,8 @@ new_season <- schedule_ds %>%
   collect() %>% 
   pull(season) %>% 
   first()
+
+new_season
 
 # Scrape missing IDs
 pbp_scrape <- sc.scrape_pbp(new_game_ids)
@@ -203,4 +204,6 @@ rbind(
     collect()
 ) %>% 
   write_parquet(glue('data/report/{new_season}/report_{new_season}.parquet'))
+
+rm(pbp_scrape)
 

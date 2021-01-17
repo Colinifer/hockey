@@ -133,7 +133,8 @@ all_game_ids <- c(2010020001:2010021230,
 all_game_ids %notin% available_game_ids
 
 pbp_df <- pbp_base_ds %>% 
-  filter(game_id %in% game_ids) %>%
+  # filter(game_id %in% game_ids) %>%
+  filter(year >= 20202021) %>%  
   collect() %>% 
   as_tibble() %>% 
   group_by(game_id) %>% 
@@ -188,6 +189,23 @@ pen_d <- pbp_df %>%
   filter(row_number() == n()) %>%
   select(home_team, away_team, event_team, pen_d, pen_d_tot)
 
+# Create assists 1 and 2
+a1 <- pbp_df %>%
+  filter(a1 != '') %>%
+  arrange(a1) %>%
+  group_by(game_id, a1) %>%
+  mutate(a1_tot = n()) %>%
+  filter(row_number() == n()) %>%
+  select(home_team, away_team, event_team, a1, a1_tot)
+
+a2 <- pbp_df %>%
+  filter(a2 != '') %>%
+  arrange(a2) %>%
+  group_by(game_id, a2) %>%
+  mutate(a2_tot = n()) %>%
+  filter(row_number() == n()) %>%
+  select(home_team, away_team, event_team, a2, a2_tot)
+
 # Create corsi events (Shots + Blocks + Misses)
 corsi <- pbp_df %>%
   filter(corsi_event == 1) %>%
@@ -207,8 +225,8 @@ corsi <- pbp_df %>%
   mutate(
     corsi_for = ifelse(corsi > 0, 1, NA),
     corsi_against = ifelse(corsi < 0, 1, NA),
-    goal_for = ifelse(corsi > 0 & event_type == 'GOAL', 1, NA),
-    goal_against = ifelse(corsi < 0 & event_type == 'GOAL', 1, NA),
+    goal_for = ifelse(corsi > 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA),
+    goal_against = ifelse(corsi < 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA),
     full_ev_corsi_for = ifelse(corsi > 0 & game_strength_state == '5v5', 1, NA),
     full_ev_corsi_against = ifelse(corsi < 0 & game_strength_state == '5v5', 1, NA),
     full_ev_goal_for = ifelse(corsi > 0 & event_type == 'GOAL' & game_strength_state == '5v5', 1, NA),
@@ -256,8 +274,10 @@ corsi <- pbp_df %>%
             full_ev_goals_for = sum(full_ev_goal_for, na.rm = T),
             full_ev_goals_against = sum(full_ev_goal_against, na.rm = T))
 
+
 events_summary_ds %>%
-  filter(game_id %in% game_ids) %>%
+  # filter(game_id %in% game_ids) %>%
+  filter(year >= 20202021) %>% 
   collect() %>%
   as_tibble() %>%
   # select(player, game_id, position) %>% 
@@ -271,6 +291,26 @@ events_summary_ds %>%
               'player' = 'pen_d_player')
             ) %>% 
   mutate(pen_d = ifelse(is.na(pen_d), 0, pen_d)) %>% 
+  left_join(a1 %>% 
+              select(
+                game_id, 
+                a1_player = a1, 
+                a1 = a1_tot),
+            by = c(
+              'game_id', 
+              'player' = 'a1_player')
+  ) %>% 
+  left_join(a2 %>% 
+              select(
+                game_id, 
+                a2_player = a2, 
+                a2 = a2_tot),
+            by = c(
+              'game_id', 
+              'player' = 'a2_player')
+  ) %>% 
+  mutate(a1 = ifelse(is.na(a1), 0, a1),
+         a2 = ifelse(is.na(a2), 0 ,a2)) %>% 
   left_join(corsi,
             by = c(
               'game_id', 
@@ -278,17 +318,14 @@ events_summary_ds %>%
             ) %>% 
   filter(position_type != 'G') %>% 
   mutate(gs = (0.75 * g) + # goals
-           (0.7 * a) + # assists
+           (0.7 * a1) + # assists 1
+           (0.55 * a2) + # assists 1
            (0.075 * s) + # shots
            (0.05 * bs) + # blocked shots
-           (0.15 * pen_d) - # penalties drawn
-           (0.15 * pen) + # penalties taken
-           (0.01 * fw) - # faceoffs won
-           (.01 * fl) + # faceoffs lost
-           (0.05 * full_ev_corsi_for) - # corsi for
-           (0.05 * full_ev_corsi_against) + # corsi against
-           (0.15 * full_ev_goals_for) - # goals for
-           (0.15 * full_ev_goals_against) # goals against
+           (0.15 * (pen_d - pen)) + # penalty differential
+           (0.01 * (fw - fl)) + # faceoff differential
+           (0.05 * (full_ev_corsi_for - full_ev_corsi_against)) + # corsi differential
+           (0.15 * (full_ev_goals_for - full_ev_goals_against)) # goals differential
          ) %>% 
   select(
     player, 
@@ -301,7 +338,8 @@ events_summary_ds %>%
   group_by(player) %>% 
   summarise(games = n(),
             g = sum(g, na.rm = T),
-            a = sum(a, na.rm = T),
+            a1 = sum(a1, na.rm = T),
+            a2 = sum(a2, na.rm = T),
             pts = sum(g, a, na.rm = T),
             gs_tot = sum(gs, na.rm = T),
             team = first(team),
@@ -309,7 +347,7 @@ events_summary_ds %>%
             # gsva = mean(gs, na.rm = T)
             ) %>% 
   # filter(games > 20) %>% 
-  arrange(-gs_tot)
+  arrange(-gsva)
 
 # (0.75 * G) + (0.7 * A1) + (0.55 * A2) + (0.075 * SOG) + (0.05 * BLK) + (0.15 * PD) – (0.15 * PT) + (0.01 * FOW) – (0.01 * FOL) + (0.05 * CF) – (0.05 * CA) + (0.15 * GF) – (0.15* GA)
 
