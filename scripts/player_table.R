@@ -130,7 +130,7 @@ all_game_ids <- c(2010020001:2010021230,
 
 '%notin%' <- Negate('%in%')
 
-all_game_ids %notin% available_game_ids
+# all_game_ids %notin% available_game_ids
 
 pbp_df <- pbp_base_ds %>% 
   # filter(game_id %in% game_ids) %>%
