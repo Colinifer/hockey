@@ -80,7 +80,7 @@ new_game_ids <- schedule_ds %>%
            game_id != '2019030016' &
            !(game_id %in% existing_game_ids) & 
            game_status == 'Final' & 
-           game_date <= Sys.Date()) %>% 
+           EST_date <= Sys.Date()) %>% 
   collect() %>%
   pull(game_id)
 
@@ -98,6 +98,9 @@ new_season <- schedule_ds %>%
 
 new_season
 
+
+# EH scrape ---------------------------------------------------------------
+
 # Scrape missing IDs
 pbp_scrape <- sc.scrape_pbp(new_game_ids)
 
@@ -112,7 +115,6 @@ pbp_scrape <- sc.scrape_pbp(new_game_ids)
 # pbp_scrape$scratches_df       ## scratches data
 # pbp_scrape$events_summary_df  ## event summary data
 # pbp_scrape$report             ## scrape report
-
 
 # Bind the new scrape to existing files
 rbind(
@@ -206,4 +208,29 @@ rbind(
   write_parquet(glue('data/report/{new_season}/report_{new_season}.parquet'))
 
 rm(pbp_scrape)
+
+
+# Moneypuck scrape --------------------------------------------------------
+
+# Grab moneypuck game data
+existing_moneypuck_ids <-
+  gsub('.csv', '', dir(
+    path = glue('data/moneypuck/{current_season}{current_season+1}/')
+  ))
+
+new_moneypuck_ids <- schedule_ds %>% 
+  filter(session == 'R' & 
+           season >= 20202021 & 
+           game_id != '2010020124' &
+           game_id != '2019030016' &
+           !(game_id %in% existing_moneypuck_ids) & 
+           game_status == 'Final' & 
+           game_date <= Sys.Date()) %>% 
+  collect() %>%
+  pull(game_id)
+
+new_moneypuck_ids
+
+map_df(new_moneypuck_ids, fx.scrape_moneypuck)
+
 

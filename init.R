@@ -81,6 +81,7 @@ date <- Sys.Date()
 
 today <- format(Sys.Date(), '%Y-%d-%m')
 source('EH_scrape_functions.R')
+source('scrape_moneypuck.R')
 # source('functions/add_to_table.R')
 
 f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
@@ -102,6 +103,9 @@ scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
 events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
 report_ds <- open_dataset('data/report/', partitioning = 'year')
 
+
+# cd Documents/dev/GitHub/Cloned/pppontusw-dl-nhltv/
+# docker run -v ~/Documents/dev/GitHub/Cloned/pppontusw-dl-nhltv:/home/nhltv/media -it pontusw/nhltv:2.2.3 nhltv --team VGK -u welshfam -p 72Valley186 -t VGK -q 900 -b 1 -d ./games/ --short-debug
 
 # http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster
 # http://www.nhl.com/scores/htmlreports/20192020/PL030113.HTM # Play by Play

@@ -134,7 +134,7 @@ all_game_ids <- c(2010020001:2010021230,
 
 pbp_df <- pbp_base_ds %>% 
   # filter(game_id %in% game_ids) %>%
-  filter(year >= 20202021) %>%  
+  filter(year == 20202021) %>%  
   collect() %>% 
   as_tibble() %>% 
   group_by(game_id) %>% 
@@ -277,7 +277,7 @@ corsi <- pbp_df %>%
 
 events_summary_ds %>%
   # filter(game_id %in% game_ids) %>%
-  filter(year >= 20202021) %>% 
+  filter(year == 20202021) %>% 
   collect() %>%
   as_tibble() %>%
   # select(player, game_id, position) %>% 
@@ -334,24 +334,53 @@ events_summary_ds %>%
     gs, 
     everything()
     ) %>% 
+  select(
+    player,
+    team,
+    game_date,
+    game_id,
+    toi_all,
+    g,
+    a1,
+    a2,
+    s,
+    bs,
+    corsi_for,
+    corsi_against,
+    goals_for,
+    goals_against,
+    fw,
+    fl,
+    gs
+  ) %>% 
   arrange(-gs) %>% 
   group_by(player) %>% 
   summarise(games = n(),
             g = sum(g, na.rm = T),
             a1 = sum(a1, na.rm = T),
             a2 = sum(a2, na.rm = T),
-            pts = sum(g, a, na.rm = T),
+            pts = sum(g, a1, a2, na.rm = T),
             gs_tot = sum(gs, na.rm = T),
             team = first(team),
-            gsva = (median(gs, na.rm = T) + mean(gs, na.rm = T)) / 2
+            gs_avg = (median(gs, na.rm = T) + mean(gs, na.rm = T)) / 2
             # gsva = mean(gs, na.rm = T)
             ) %>% 
   # filter(games > 20) %>% 
-  arrange(-gsva)
+  arrange(-gs_tot)
 
 # (0.75 * G) + (0.7 * A1) + (0.55 * A2) + (0.075 * SOG) + (0.05 * BLK) + (0.15 * PD) – (0.15 * PT) + (0.01 * FOW) – (0.01 * FOL) + (0.05 * CF) – (0.05 * CA) + (0.15 * GF) – (0.15* GA)
 
-# Feather -----------------------------------------------------------------
 
-pbp_ds <- open_dataset('data/pbp/fastr', partitioning = 'year')
+scrape <- nhlapi::nhl_games(2020020034, 'feed/live') %>% 
+  nth(1) %>% 
+  nth(6) %>% 
+  nth(1) %>% 
+  nth(1) %>% 
+  as_tibble() %>% 
+  pull(players) %>% 
+  length()
+
+scrape[[1]]$liveData$plays$allPlays$about.dateTime %>% 
+  as_tibble() %>% 
+  unique()
 
