@@ -1,6 +1,5 @@
 current_season <- 2020
 
-# Scrape latest schedule and save it
 schedule_df <- map_df(current_season, function(x){
   schedule_list <- nhlapi::nhl_schedule_seasons(x)
   
@@ -42,21 +41,6 @@ schedule_df <- map_df(current_season, function(x){
     as_tibble() %>% 
     write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
 })
-
-# read_csv('data/2016schedule.csv') %>% 
-#   as_tibble() %>% 
-#   mutate(game_id = game_id %>% as.character(),
-#          game_date = game_date %>% as_date(),
-#          season = season %>% as.character(),
-#          session = session %>% as.character(),
-#          game_status = game_status %>% as.character(),
-#          away_team = away_team %>% as.character(),
-#          home_team = home_team %>% as.character(),
-#          game_venue = game_venue %>% as.character(),
-#          game_datetime = game_datetime %>% as.character(),
-#          EST_time_convert = EST_time_convert %>% as.character(),
-#          EST_date = EST_date %>% as_date()) %>% 
-#   write_parquet(glue('data/schedule/20162017/schedule_20162017.parquet'))
 
 # Peak at schedule
 schedule_df
@@ -214,7 +198,7 @@ rm(pbp_scrape)
 
 # Grab moneypuck game data
 existing_moneypuck_ids <-
-  gsub('.csv', '', dir(
+  gsub('.rds', '', dir(
     path = glue('data/moneypuck/{current_season}{current_season+1}/')
   ))
 

@@ -80,6 +80,7 @@ year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
 
 today <- format(Sys.Date(), '%Y-%d-%m')
+source('plots/assets/plot_theme.R', echo = F)
 source('EH_scrape_functions.R')
 source('scrape_moneypuck.R')
 # source('functions/add_to_table.R')
@@ -102,6 +103,63 @@ roster_ds <- open_dataset('data/roster/', partitioning = 'year')
 scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
 events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
 report_ds <- open_dataset('data/report/', partitioning = 'year')
+
+active_players <- nhlapi::nhl_teams_rosters() %>% 
+  unnest(roster.roster) %>% 
+  as_tibble()
+
+
+roster_df <- roster_ds %>% 
+  filter(season == '20202021') %>% 
+  select(-game_id,
+         -game_date,
+         -opponent,
+         -is_home) %>% 
+  collect() %>% 
+  unique() %>% 
+  as_tibble() %>% 
+  rename(
+    # player,
+    first_name = firstname,
+    last_name = lastname,
+    jersey_number = player_num
+  ) %>% 
+  mutate(
+    full_name = glue('{first_name} {last_name}')
+  ) %>% 
+  left_join(
+    active_players %>% 
+      select(
+        team_name = teamName,
+        full_name = person.fullName,
+        jersey_number = jerseyNumber,
+        player_id = person.id
+      ) %>% 
+      mutate(
+        full_name = full_name %>% toupper(),
+        jersey_number = jersey_number %>% as.double()
+      ),
+    by = c('full_name',
+           'jersey_number')
+  ) %>% 
+  left_join(
+    teamcolors %>% 
+      select(
+        league,
+        team_name = mascot,
+        logo
+      ) %>% 
+      filter(league == 'nhl') %>% 
+      select(
+        -league
+      ),
+    by = c('team_name')
+  ) %>% 
+  unique() %>% 
+  mutate(
+    headshot_url = glue('https://cms.nhl.bamgrid.com/images/headshots/current/168x168/{player_id}.jpg'),
+    action_shot_url = glue('https://cms.nhl.bamgrid.com/images/actionshots/{player_id}.jpg')
+  )
 
 
 # cd Documents/dev/GitHub/Cloned/pppontusw-dl-nhltv/

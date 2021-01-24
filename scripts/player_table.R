@@ -1,107 +1,4 @@
-library(arrow)
-
-
-# Create Parquet files ----------------------------------------------------
-
-lapply(1:5, function(x){
-  pbp_base <- readRDS(
-    glue(
-      'data/pbp_scrape{x}.rds'
-    )
-  )
-  pbp_base_seasons <- pbp_base$game_info %>% 
-    pull(season) %>% 
-    unique()
-  
-  # pbp_base_names <- pbp_base %>% names()
-  pbp_base_names <- c(
-    'game_info',
-    'pbp_base',
-    'player_shifts',
-    'player_periods',
-    'roster',
-    'scratches',
-    'events_summary'
-  )
-  
-  lapply(pbp_base_names, function(y.names){
-    dir.create(glue('data/{y.names}'))
-  })
-  
-  lapply(pbp_base_seasons, function(x.season){
-    lapply(pbp_base_names, function(y.names){
-      dir.create(
-        glue('data/{y.names}/{x.season}')
-        )
-      pbp_base %>% 
-        purrr::pluck(y.names) %>% 
-        filter(season == x.season) %>% 
-        write_parquet(
-          glue('data/{y.names}/{x.season}/{y.names}_{x.season}.parquet')
-          )
-      })
-    })
-  
-  # # pbp_base_names <- pbp_base %>% names()
-  # pbp_base_names <- c(
-  #   'report',
-  #   'pbp_extras'
-  # )
-  # 
-  # lapply(pbp_base_names, function(y.names){
-  #   dir.create(glue('data/{y.names}'))
-  # })
-  # 
-  # lapply(pbp_base_seasons, function(x.season){
-  #   lapply(pbp_base_names, function(y.names){
-  #     dir.create(
-  #       glue('data/{y.names}/{x.season}')
-  #     )
-  #     pbp_base %>%
-  #       purrr::pluck(y.names) %>%
-  #       filter(grepl(x.season %>% substr(1,4), game_id)) %>%
-  #       write_parquet(
-  #         glue('data/{y.names}/{x.season}/{y.names}_{x.season}.parquet')
-  #       )
-  #   })
-  # })
-})
-
-lapply(1:5, function(x){
-  pbp_base <- readRDS(
-    glue(
-      'data/pbp_scrape{x}.rds'
-    )
-  )
-  pbp_base_seasons <- pbp_base$game_info %>% 
-    pull(season) %>% 
-    unique()
-  
-  # pbp_base_names <- pbp_base %>% names()
-  pbp_base_names <- c(
-    'report',
-    'pbp_extras'
-  )
-  
-  lapply(pbp_base_names, function(y.names){
-    dir.create(glue('data/{y.names}'))
-  })
-  
-  lapply(pbp_base_seasons, function(x.season){
-    lapply(pbp_base_names, function(y.names){
-      dir.create(
-        glue('data/{y.names}/{x.season}')
-      )
-      pbp_base %>% 
-        purrr::pluck(y.names) %>% 
-        filter(grepl(x.season %>% substr(1,4), game_id)) %>% 
-        write_parquet(
-          glue('data/{y.names}/{x.season}/{y.names}_{x.season}.parquet')
-        )
-    })
-  })
-})
-
+# library(arrow)
 
 # Retrieve data -----------------------------------------------------------
 
@@ -275,7 +172,7 @@ corsi <- pbp_df %>%
             full_ev_goals_against = sum(full_ev_goal_against, na.rm = T))
 
 
-events_summary_ds %>%
+skater_game_score <- events_summary_ds %>%
   # filter(game_id %in% game_ids) %>%
   filter(year == 20202021) %>% 
   collect() %>%
@@ -353,7 +250,7 @@ events_summary_ds %>%
     fl,
     gs
   ) %>% 
-  arrange(-gs) %>% 
+  # arrange(-gs) %>% 
   group_by(player) %>% 
   summarise(games = n(),
             g = sum(g, na.rm = T),
@@ -365,8 +262,90 @@ events_summary_ds %>%
             gs_avg = (median(gs, na.rm = T) + mean(gs, na.rm = T)) / 2
             # gsva = mean(gs, na.rm = T)
             ) %>% 
+  left_join(
+    roster_df %>% 
+      unique(),
+    by = c('player')
+    ) %>% 
   # filter(games > 20) %>% 
-  arrange(-gs_tot)
+  arrange(-gs_tot) %>% 
+  dplyr::slice(1:50)
+
+skater_game_score %>% 
+  select(
+    full_name,
+    headshot_url,
+    logo,
+    games,
+    g,
+    a1,
+    a2,
+    pts,
+    gs_tot
+  ) %>%
+  arrange(-gs_tot) %>% 
+  # dplyr::slice(1:50) %>% 
+  mutate(Rank = paste0('#',row_number())) %>% 
+  gt() %>% 
+  tab_header(title = glue('Total Game Score {current_season}')) %>% 
+  cols_move_to_start(columns = vars(Rank)) %>% 
+  cols_label(
+    full_name = 'Name',
+    headshot_url = '',
+    logo = '',
+    games = 'GP',
+    g = 'Goals',
+    a1 = 'A1',
+    a2 = 'A2',
+    pts = 'Points',
+    gs_tot = 'Total Gamescore'
+  ) %>% 
+  tab_style(style = cell_text(font = "Chivo", size = 'x-large', weight = 'bold'), locations = cells_title(groups = 'title')) %>% 
+  tab_style(style = cell_text(align = 'center', size = 'medium'), locations = cells_body()) %>% 
+  tab_style(style = cell_text(align = 'left'), locations = cells_body(vars(full_name))) %>% 
+  tab_style(
+    style = cell_borders(
+      sides = "left",
+      color = color_cw[5],
+      weight = px(3)
+    ),
+    locations = list(
+      cells_body(
+        columns = c(5,6,10)
+      )
+    )
+  ) %>% 
+  tab_style(
+    style = cell_text(font = "Chivo", weight = "bold"),
+    locations = cells_body(
+      columns = vars(Rank, full_name)
+    )
+  ) %>% 
+  tab_style(
+    style = cell_text(font = "Montserrat"),
+    locations = cells_body(
+      columns = c(5:10)
+    )
+  ) %>% 
+  tab_spanner(label = 'Assists', columns = vars(a1, a2)) %>% 
+  tab_source_note(source_note = 'Chart: Colin Welsh | Data: NHL') %>% 
+  data_color(
+    columns = vars(gs_tot),
+    colors = scales::col_quantile(palette = c(color_cw[8], color_cw[2], color_cw[6]), domain = c(max(skater_game_score$gs_tot), 0, min(skater_game_score$gs_tot))),
+    autocolor_text = FALSE
+  ) %>% 
+  text_transform(
+    locations = cells_body(vars(headshot_url)),
+    fn = function(x) web_image(url = x)
+  ) %>% 
+  text_transform(
+    locations = cells_body(vars(logo)),
+    fn = function(x) web_image(url = glue('https://a.espncdn.com/i/teamlogos/nfl/500/{x}.png'))
+  ) 
+  
+
+
+skater_game_score
 
 # (0.75 * G) + (0.7 * A1) + (0.55 * A2) + (0.075 * SOG) + (0.05 * BLK) + (0.15 * PD) – (0.15 * PT) + (0.01 * FOW) – (0.01 * FOL) + (0.05 * CF) – (0.05 * CA) + (0.15 * GF) – (0.15* GA)
 
