@@ -271,6 +271,8 @@ skater_game_score <- events_summary_ds %>%
   arrange(-gs_tot) %>% 
   dplyr::slice(1:50)
 
+# https://cms.nhl.bamgrid.com/images/headshots/current/168x168/skater.jpg
+
 skater_game_score %>% 
   select(
     full_name,
@@ -331,17 +333,46 @@ skater_game_score %>%
   tab_source_note(source_note = 'Chart: Colin Welsh | Data: NHL') %>% 
   data_color(
     columns = vars(gs_tot),
-    colors = scales::col_quantile(palette = c(color_cw[8], color_cw[2], color_cw[6]), domain = c(max(skater_game_score$gs_tot), 0, min(skater_game_score$gs_tot))),
+    colors = scales::col_numeric(palette = c(color_cw[8], color_cw[2], color_cw[6]), domain = c(max(skater_game_score$gs_tot), 0, min(skater_game_score$gs_tot))),
     autocolor_text = FALSE
   ) %>% 
   text_transform(
     locations = cells_body(vars(headshot_url)),
-    fn = function(x) web_image(url = x)
+    fn = function(x) web_image(url = x) %>% 
+      image_read(x) %>% 
+      image_background(none)
   ) %>% 
   text_transform(
     locations = cells_body(vars(logo)),
-    fn = function(x) web_image(url = glue('https://a.espncdn.com/i/teamlogos/nfl/500/{x}.png'))
-  ) 
+    fn = function(x) web_image(url = x)
+  ) %>% 
+  cols_width(vars(logo) ~ px(45)) %>% 
+  gt::tab_options(
+    table.font.color = color_cw[5],
+    data_row.padding = '2px',
+    row_group.padding = '3px',
+    column_labels.border.bottom.color = color_cw[5],
+    column_labels.border.bottom.width = 1.4,
+    column_labels.font.weight = "bold",
+    table_body.border.top.color = color_cw[5],
+    row_group.border.top.width = 1.5,
+    row_group.border.top.color = '#999999',
+    table_body.border.bottom.width = 0.7,
+    table_body.border.bottom.color = '#999999',
+    row_group.border.bottom.width = 1,
+    row_group.border.bottom.color = color_cw[5],
+    table.border.top.color = 'transparent',
+    table.background.color = color_cw[1],
+    table.border.bottom.color = 'transparent',
+    row.striping.background_color = color_cw[2],
+    row.striping.include_table_body = TRUE
+  ) %>% 
+  opt_table_font(
+    font = list(
+      google_font("Chivo"),
+      default_fonts()
+    )
+  )
   
 
 

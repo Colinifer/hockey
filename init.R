@@ -76,6 +76,7 @@ if ((
   dbDisconnect(con)
 }
 
+current_season <- 2020
 year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
 
