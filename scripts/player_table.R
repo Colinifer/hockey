@@ -43,7 +43,7 @@ pbp_df <- pbp_base_ds %>%
     pen_d =  if_else(event_type == 'PENL', event_player_2, ''),
     shot = if_else(event_type == 'SHOT', event_player_1, ''),
     block = if_else(event_type == 'BLOCK', event_player_2, ''),
-    corsi_event = ifelse(event_type %in% st.corsi_events, 1, 0),
+    corsi_event = ifelse(event_type %in% st.corsi_events, 1, NA),
     home_corsi = case_when(corsi_event == 1 &
                                  ((event_type %in% st.corsi_events &
                                      event_team == home_team)) == TRUE ~ 1,
@@ -66,7 +66,14 @@ pbp_df <- pbp_base_ds %>%
       event_type == 'FAC',
       if_else(event_team != away_team, event_player_1, event_player_2),
       '')
-  )
+  ) %>% 
+  group_by(game_id, faceoff_w) %>% 
+  # Trying to consolidate code
+  mutate(faceoff_w_tot = case_when(faceoff_w != '' ~ 1,
+                                   TRUE ~ 0),
+         faceoff_l_tot = case_when(faceoff_l != '' ~ 1,
+                                    TRUE ~ 0),
+         pen_d = ) %>%
   # select(home_team, away_team, event_type, event_team, goal, a1, a2, shot, faceoff_w, faceoff_l) 
 
 faceoffs <- pbp_df %>%
@@ -274,6 +281,7 @@ skater_game_score <- events_summary_ds %>%
 # https://cms.nhl.bamgrid.com/images/headshots/current/168x168/skater.jpg
 
 skater_game_score %>% 
+  dplyr::slice(1:25) %>% 
   select(
     full_name,
     headshot_url,
@@ -338,9 +346,9 @@ skater_game_score %>%
   ) %>% 
   text_transform(
     locations = cells_body(vars(headshot_url)),
-    fn = function(x) web_image(url = x) %>% 
-      image_read(x) %>% 
-      image_background(none)
+    fn = function(x) web_image(url = x)
+      # image_read(x) %>% 
+      # image_background(none)
   ) %>% 
   text_transform(
     locations = cells_body(vars(logo)),
@@ -372,7 +380,8 @@ skater_game_score %>%
       google_font("Chivo"),
       default_fonts()
     )
-  )
+  ) %>% 
+  gtsave(filename = glue('gt_help_table.png'))
   
 
 
