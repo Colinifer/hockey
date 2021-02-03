@@ -10,8 +10,8 @@ fx.scrape_moneypuck <- function(gameid) {
     saveRDS(glue('data/moneypuck/{season}/{gameid}.rds'))
   
   runif(1, 
-        min=6, 
-        max=8
+        min=2, 
+        max=4
         ) %>% 
     Sys.sleep()
 }

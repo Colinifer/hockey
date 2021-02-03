@@ -67,13 +67,17 @@ pbp_df <- pbp_base_ds %>%
       if_else(event_team != away_team, event_player_1, event_player_2),
       '')
   ) %>% 
-  group_by(game_id, faceoff_w) %>% 
+  ungroup() %>% 
+  # group_by(game_id, faceoff_w) %>% 
   # Trying to consolidate code
-  mutate(faceoff_w_tot = case_when(faceoff_w != '' ~ 1,
+  mutate(faceoff_w_tot = case_when(faceoff_w == '' ~ 1,
                                    TRUE ~ 0),
-         faceoff_l_tot = case_when(faceoff_l != '' ~ 1,
-                                    TRUE ~ 0),
-         pen_d = ) %>%
+         faceoff_l_tot = case_when(faceoff_l == '' ~ 1,
+                                   TRUE ~ 0)) %>% 
+  ungroup() %>% 
+  # group_by(game_id, faceoff_l) %>% 
+  mutate(pen_d_tot = case_when(pen_d != '' ~ 1,
+                           TRUE ~ 0)) %>%
   # select(home_team, away_team, event_type, event_team, goal, a1, a2, shot, faceoff_w, faceoff_l) 
 
 faceoffs <- pbp_df %>%
