@@ -29,20 +29,21 @@ all_game_ids <- c(2010020001:2010021230,
 
 # all_game_ids %notin% available_game_ids
 
-pbp_df <- pbp_base_ds %>% 
+# pbp_df <- 
+  pbp_base_ds %>% 
   # filter(game_id %in% game_ids) %>%
   filter(year == 20202021) %>%  
   collect() %>% 
   as_tibble() %>% 
   group_by(game_id) %>% 
   mutate(
-    goal = if_else(event_type == 'GOAL', event_player_1, ''),
-    a1 = if_else(event_type == 'GOAL', event_player_2, ''),
-    a2 = if_else(event_type == 'GOAL', event_player_3, ''),
-    pen_t =  if_else(event_type == 'PENL', event_player_1, ''),
-    pen_d =  if_else(event_type == 'PENL', event_player_2, ''),
-    shot = if_else(event_type == 'SHOT', event_player_1, ''),
-    block = if_else(event_type == 'BLOCK', event_player_2, ''),
+    goal = ifelse(event_type == 'GOAL', event_player_1, NA),
+    a1 = ifelse(event_type == 'GOAL', event_player_2, NA),
+    a2 = ifelse(event_type == 'GOAL', event_player_3, NA),
+    pen_t =  ifelse(event_type == 'PENL', event_player_1, NA),
+    pen_d =  ifelse(event_type == 'PENL', event_player_2, NA),
+    shot = ifelse(event_type == 'SHOT', event_player_1, NA),
+    block = ifelse(event_type == 'BLOCK', event_player_2, NA),
     corsi_event = ifelse(event_type %in% st.corsi_events, 1, NA),
     home_corsi = case_when(corsi_event == 1 &
                                  ((event_type %in% st.corsi_events &
@@ -58,27 +59,28 @@ pbp_df <- pbp_base_ds %>%
                                  ((event_type %in% st.corsi_events &
                                      event_team != away_team)) == TRUE ~ -1,
                                TRUE ~ 0),
-    faceoff_w = if_else(
+    faceoff_w = ifelse(
       event_type == 'FAC',
-      if_else(event_team == away_team, event_player_1, event_player_2),
-      ''),
-    faceoff_l = if_else(
+      ifelse(event_team == away_team, event_player_1, event_player_2),
+      NA),
+    faceoff_l = ifelse(
       event_type == 'FAC',
-      if_else(event_team != away_team, event_player_1, event_player_2),
-      '')
+      ifelse(event_team != away_team, event_player_1, event_player_2),
+      NA)
   ) %>% 
   ungroup() %>% 
+  group_by(game_id, event_player_1) %>% 
+  summarize(
+    faceoff_w_tot = n(),
+    faceoff_l_tot = n(),
+    pen_t_tot = n(),
+    pen_d_tot = n(),
+    a1_tot = n(),
+    a2_tot = n()
+  ) %>% 
   # group_by(game_id, faceoff_w) %>% 
   # Trying to consolidate code
-  mutate(faceoff_w_tot = case_when(faceoff_w == '' ~ 1,
-                                   TRUE ~ 0),
-         faceoff_l_tot = case_when(faceoff_l == '' ~ 1,
-                                   TRUE ~ 0)) %>% 
-  ungroup() %>% 
-  # group_by(game_id, faceoff_l) %>% 
-  mutate(pen_d_tot = case_when(pen_d != '' ~ 1,
-                           TRUE ~ 0)) %>%
-  # select(home_team, away_team, event_type, event_team, goal, a1, a2, shot, faceoff_w, faceoff_l) 
+  ungroup()
 
 faceoffs <- pbp_df %>%
   filter(faceoff_w != '') %>%
@@ -93,7 +95,7 @@ pen_d <- pbp_df %>%
   filter(pen_d != '') %>%
   arrange(pen_d) %>%
   group_by(game_id, pen_d) %>%
-  mutate(pen_d_tot = n()) %>%
+  summarize(pen_d_tot = n()) %>%
   filter(row_number() == n()) %>%
   select(home_team, away_team, event_team, pen_d, pen_d_tot)
 
