@@ -17,6 +17,7 @@ pkgs <- c(
   'teamcolors',
   'glue',
   'dplyr',
+  'rvest',
   'arrow',
   'RCurl',
   'tictoc',
@@ -83,7 +84,7 @@ date <- Sys.Date()
 today <- format(Sys.Date(), '%Y-%d-%m')
 source('plots/assets/plot_theme.R', echo = F)
 source('EH_scrape_functions.R')
-source('scrape_moneypuck.R')
+source('scripts/scrape_sources.R')
 # source('functions/add_to_table.R')
 
 f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))

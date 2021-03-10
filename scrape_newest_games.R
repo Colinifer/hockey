@@ -43,7 +43,9 @@ schedule_df <- map_df(current_season, function(x){
 })
 
 # Peak at schedule
-schedule_df
+schedule_df %>% 
+  as_tibble() %>% 
+  filter(game_date == Sys.Date())
 
 # Get all IDs currently in database
 existing_game_ids <- game_info_ds %>% 
@@ -196,7 +198,7 @@ rm(pbp_scrape)
 
 # Moneypuck scrape --------------------------------------------------------
 
-# Grab moneypuck game data
+# Grab existing moneypuck games
 existing_moneypuck_ids <-
   gsub('.rds', '', dir(
     path = glue('data/moneypuck/{current_season}{current_season+1}/')
@@ -216,5 +218,29 @@ new_moneypuck_ids <- schedule_ds %>%
 new_moneypuck_ids
 
 map_df(new_moneypuck_ids, fx.scrape_moneypuck)
+
+
+# Natural Stat Trick scrape -----------------------------------------------
+
+# Grab existing NST games
+existing_nst_ids <-
+  gsub('.rds', '', dir(
+    path = glue('data/nst/{current_season}{current_season+1}/')
+  ))
+
+new_nst_ids <- schedule_ds %>% 
+  filter(session == 'R' & 
+           season >= 20202021 & 
+           game_id != '2010020124' &
+           game_id != '2019030016' &
+           !(game_id %in% existing_nst_ids) & 
+           game_status == 'Final' & 
+           game_date <= Sys.Date()) %>% 
+  collect() %>%
+  pull(game_id)
+
+new_nst_ids
+
+map_df(new_nst_ids, fx.scrape_nst)
 
 

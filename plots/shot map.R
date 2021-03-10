@@ -1,10 +1,19 @@
 source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/hockey-rink.R'))
 source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/gg-rink.R'))
 
+x.game_id <- schedule_df %>% 
+  filter(game_status == 'Final' &
+           (home_team == 'CHI' |
+              away_team == 'CHI')) %>% 
+  filter(row_number() == n()) %>% 
+  pull(game_id)
+
+x.game_id
+  
 pbp_base_ds %>%
   filter(season == 20202021 &
-           game_id == '2020020174' &
-           event_type == 'SHOT') %>%
+           game_id %in% x.game_id &
+           event_type %in% c('SHOT', 'MISS', 'GOAL')) %>%
   select(event_team,
          game_period,
          coords_x,
@@ -29,6 +38,7 @@ pbp_base_ds %>%
        subtitle = "NHL rink",
        x = NULL,
        y = NULL) +
-  scale_x_continuous(breaks = seq(-30, 30, by = 5)) +
-  scale_y_continuous(breaks = seq(-15, 15, by = 3))
+  # scale_x_continuous(breaks = seq(-30, 30, by = 5)) +
+  # scale_y_continuous(breaks = seq(-15, 15, by = 3)) +
+  NULL
 

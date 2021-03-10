@@ -69,10 +69,12 @@ all_game_ids <- c(2010020001:2010021230,
       NA)
   ) %>% 
   ungroup() %>% 
-  group_by(game_id, event_player_1) %>% 
+  group_by(game_id) %>% 
+  count(faceoff_w) %>% 
+  rename(faceoff_w_tot = n) %>% 
   summarize(
-    faceoff_w_tot = n(),
-    faceoff_l_tot = n(),
+    faceoff_w_tot = faceoff_w %>% n(),
+    faceoff_l_tot = sum(faceoff_l, na.rm = T),
     pen_t_tot = n(),
     pen_d_tot = n(),
     a1_tot = n(),
