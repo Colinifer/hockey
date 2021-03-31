@@ -22,6 +22,7 @@ clean__img_transparent <- function(img_url, trim = FALSE){
     geometry_area(0, 0, 0, 0)
   }
   
+  # Tom Mock method ---
   # img_url %>% 
   #   image_read() %>% 
   #   image_crop(geometry = trim_area) %>% 
@@ -33,7 +34,7 @@ clean__img_transparent <- function(img_url, trim = FALSE){
   #   ) %>% 
   #   image_write(path = glue('assets/player_images/{img_name}.png'), format ='png')
   
-  # @dmi3k erode
+  # @dmi3k erode method ---
   img <- img_url %>% 
     image_read()
   
