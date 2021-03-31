@@ -1,5 +1,5 @@
 
 standings <- nhlapi::nhl_standings() %>% 
-  # select(teamRecords) %>% 
-  unnest(cols = c(teamRecords)) %>% 
+  select(teamRecords) %>% 
+  unnest() %>% 
   as_tibble()
