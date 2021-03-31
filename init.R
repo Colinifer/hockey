@@ -58,6 +58,7 @@ if (any('bbplot' %in%
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs, installed_packages)
 
+'%notin%' <- Negate('%in%')
 
 options(tibble.print_min=25)
 
