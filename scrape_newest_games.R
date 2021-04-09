@@ -40,7 +40,14 @@ schedule_df <- map_df(current_season, function(x){
   ) %>% 
     as_tibble() %>% 
     write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
-})
+}) %>% 
+  invisible()
+
+# get_schedule_clean <- function(x) {
+#   nhlapi::nhl_schedule_seasons(2020)[[1]]$dates$games %>% 
+#     bind_rows() %>% 
+#     as_tibble()
+# } 
 
 # Peak at schedule
 schedule_df %>% 
