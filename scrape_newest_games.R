@@ -208,7 +208,7 @@ rm(pbp_scrape)
 # Grab existing moneypuck games
 existing_moneypuck_ids <-
   gsub('.rds', '', dir(
-    path = glue('data/moneypuck/{current_season}{current_season+1}/')
+    path = glue('data/moneypuck_games/{new_season}/')
   ))
 
 new_moneypuck_ids <- schedule_ds %>% 
@@ -232,7 +232,7 @@ map_df(new_moneypuck_ids, fx.scrape_moneypuck)
 # Grab existing NST games
 existing_nst_ids <-
   gsub('.rds', '', dir(
-    path = glue('data/nst/{current_season}{current_season+1}/')
+    path = glue('data/nst_games/{new_season}/')
   ))
 
 new_nst_ids <- schedule_ds %>% 

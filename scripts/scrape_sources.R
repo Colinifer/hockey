@@ -12,9 +12,21 @@ fx.scrape_moneypuck <- function(x.gameid) {
   x.year <- substr(x.gameid,1,4) %>% as.integer()
   mp_season_id <- glue('{x.year}{x.year+1}')
   mp_base <- 'http://moneypuck.com/moneypuck/gameData'
+  mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
+    mutate(season = mp_season_id) %>% 
+    select(season,
+           everything())
   
-  read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
-    saveRDS(glue('data/moneypuck/{mp_season_id}/{x.gameid}.rds'))
+  mp_csv %>% 
+    saveRDS(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
+  
+  mp_csv %>% 
+    bind_rows(
+      mp_ds %>% 
+        filter(season == mp_season_id) %>% 
+        collect()
+    ) %>% 
+    write_parquet(glue('data/moneypuck/{mp_season_id}/mp_{mp_season_id}.parquet'))
   
   runif(1, 
         min=2, 
@@ -168,10 +180,17 @@ fx.scrape_nst <- function(x.gameid) {
   # Save game tables to RDS
   print(glue('Saving {x.gameid} to RDS'))
   nst_scrape %>% 
-    saveRDS(glue('data/nst/{nst_season_id}/{x.gameid}.rds'))
+    saveRDS(glue('data/nst_games/{nst_season_id}/{x.gameid}.rds'))
  
+  nst_scrape %>% 
+    bind_rows(
+      nst_ds %>% 
+        collect()
+    ) %>% 
+    write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
+  
  # Stall scrape timer
- sleep_time <- runif(1, min=20, max=25)
+ sleep_time <- runif(1, min=10, max=15)
  print(glue('Sleeping {sleep_time}s before next request'))
  
  sleep_time %>% 
