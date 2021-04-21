@@ -73,7 +73,7 @@ fx.setdir(proj_name)
 con <- dbConnect(
   RPostgres::Postgres(),
   host = ifelse(
-    fromJSON(
+    jsonlite::fromJSON(
       readLines("http://api.hostip.info/get_json.php",
                 warn = F)
     )$ip == Sys.getenv('ip'),
