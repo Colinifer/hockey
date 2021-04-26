@@ -1,46 +1,6 @@
 current_season <- 2020
 
-schedule_df <- map_df(current_season, function(x){
-  schedule_list <- nhlapi::nhl_schedule_seasons(x)
-  
-  
-  n_games <- schedule_list[[1]]$totalItems
-  # return(n_games)
-  n_days <- schedule_list[[1]]$dates$games %>% length()
-  # return(n_days)
-  
-  schedule <- map_df(1:n_days, function(x) {
-    schedule_list %>% 
-      nth(1) %>% 
-      nth(7) %>% 
-      pull(games) %>% 
-      nth(x) %>% 
-      as_tibble()
-  })
-  
-  season_first_year <- schedule %>% 
-    pull(gamePk) %>% 
-    first() %>% 
-    substr(1,4)
-  
-  season_full <- schedule %>% 
-    pull(season) %>% 
-    first()
-  
-  sc.scrape_schedule(
-    start_date = schedule %>%
-      pull(gameDate) %>%
-      min() %>%
-      as.Date(),
-    # start_date = schedule %>% pull(gameDate) %>% min() %>% as.Date(),
-    end_date = schedule %>%
-      pull(gameDate) %>%
-      max() %>%
-      as.Date()
-  ) %>% 
-    as_tibble() %>% 
-    write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
-}) %>% 
+schedule_df <- map_df(current_season, get_nhl_schedule) %>% 
   invisible()
 
 # get_schedule_clean <- function(x) {
