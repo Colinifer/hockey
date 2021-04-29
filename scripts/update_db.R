@@ -42,7 +42,7 @@ get_nhl_schedule <- function(x,
   n_days <- schedule_list[[1]]$dates$games %>% length()
   # return(n_days)
   
-  schedule <- map_df(1:n_days, function(x) {
+  schedule <- map_dfr(1:n_days, function(x) {
     schedule_list %>% 
       nth(1) %>% 
       nth(7) %>% 
@@ -69,7 +69,8 @@ get_nhl_schedule <- function(x,
     end_date = schedule %>%
       pull(gameDate) %>%
       max() %>%
-      as.Date()
+      as.Date(),
+    print_sched = FALSE
   ) %>% 
     as_tibble() %>% 
     mutate(season = season %>% as.integer())
@@ -102,7 +103,7 @@ get_nhl_schedule <- function(x,
   )
   
   map("schedule", function(x){
-    DBI::dbGetQuery(hockey_db,
+    DBI::dbSendQuery(hockey_db,
                     glue('DELETE from {x} where season = {season_full}'))
   })
   
@@ -118,7 +119,6 @@ get_nhl_schedule <- function(x,
   
   return(payload)
 }
-schedule_df <- get_nhl_schedule(2020)
 
 # Get season data
 annual_nhl_query <- function(x) {
@@ -539,77 +539,7 @@ delete_and_upload <- function(scrape, season,
   DBI::dbDisconnect(hockey_db)
   rm(hockey_db)
 }
-
-
-con <- dbConnect(
-  RPostgres::Postgres(),
-  host = ifelse(
-    fromJSON(
-      readLines("http://api.hostip.info/get_json.php",
-                warn = F)
-    )$ip == Sys.getenv('ip'),
-    Sys.getenv('local'),
-    Sys.getenv('ip')
-  ),
-  port = Sys.getenv('postgres_port'),
-  user = Sys.getenv('db_user'),
-  password = Sys.getenv('db_password'),
-  dbname = proj_name,
-  # database = "football",
-  # Server = "localhost\\SQLEXPRESS",
-  # Database = "datawarehouse",
-  NULL
-)
-
-existing_seasons <- schedule_ds %>% 
-  select(season) %>% 
-  collect() %>% 
-  pull(season) %>%
-  unique()
-
-map(2020, annual_nhl_query)
-
-map(.x = db_tables,
-    ~{tbl(con, .x) %>%
-        filter(game_year == 2008) %>%
-        count() %>%
-        collect()
-    })
-
-
-# map(.x = seq(2009, 2019, 1), 
-map(.x = 2021,
-    ~{payload_statcast <- annual_nhl_query(season = .x)
-    
-    message(paste0('Formatting payload for ', .x, '...'))
-    
-    df <- format_append_statcast(df = payload_statcast)
-    
-    message(paste0('Deleting and uploading ', .x, ' data to database...'))
-    
-    delete_and_upload(df, 
-                      year = .x, 
-                      db_driver = 'PostgreSQL', 
-                      dbname = proj_name, 
-                      user = Sys.getenv('db_user'), 
-                      password = Sys.getenv('db_password'), 
-                      host = ifelse(
-                        fromJSON(
-                          readLines("http://api.hostip.info/get_json.php",
-                                    warn = F)
-                        )$ip == Sys.getenv('ip'),
-                        Sys.getenv('local'),
-                        Sys.getenv('ip')
-                      ), 
-                      port = Sys.getenv('postgres_port'))
-    
-    message('Sleeping and collecting garbage...')
-    
-    Sys.sleep(5*60)
-    
-    gc()
-    
-    })
+# map(2020, annual_nhl_query)
 
 # tbl(con, 'game_info') %>%
 #   group_by(season) %>%

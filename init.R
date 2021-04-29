@@ -102,23 +102,13 @@ if ((
 }
 
 current_season <- 2020
+current_full_season <- glue('{current_season}{current_season+1}')
 year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
 
 today <- format(Sys.Date(), '%Y-%d-%m')
-source('plots/assets/plot_theme.R', echo = F)
-source('EH_scrape_functions.R')
-source('scripts/scrape_sources.R')
-# source('functions/add_to_table.R')
 
-f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
-# f.scrape[3] %>% lapply(fx.add_to_table)
-
-# If scrape isn't caught up
-# u.scrape_interval <- 250
-# source('playground/addToTable.R')
-
-
+# f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
 schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
 game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
 pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
@@ -132,13 +122,17 @@ report_ds <- open_dataset('data/report/', partitioning = 'year')
 mp_ds <- open_dataset('data/moneypuck/', partitioning = 'year')
 nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
+source('plots/assets/plot_theme.R', echo = F)
+source('EH_scrape_functions.R')
+source('scripts/update_db.R')
+source('scripts/scrape_sources.R')
+
 active_players <- nhlapi::nhl_teams_rosters() %>% 
   unnest(roster.roster) %>% 
   as_tibble()
 
-
 roster_df <- roster_ds %>% 
-  filter(season == '20202021') %>% 
+  filter(season == current_full_season) %>% 
   select(-game_id,
          -game_date,
          -opponent,
@@ -189,9 +183,81 @@ roster_df <- roster_ds %>%
     action_shot_url = glue('https://cms.nhl.bamgrid.com/images/actionshots/{player_id}.jpg')
   )
 
+map(current_season, annual_nhl_query)
 
-# cd Documents/dev/GitHub/Cloned/pppontusw-dl-nhltv/
-# docker run -v ~/Documents/dev/GitHub/Cloned/pppontusw-dl-nhltv:/home/nhltv/media -it pontusw/nhltv:2.2.3 nhltv --team VGK -u welshfam -p 72Valley186 -t VGK -q 900 -b 1 -d ./games/ --short-debug
+# Grab existing moneypuck games
+existing_moneypuck_ids <-
+  gsub('.rds', '', dir(
+    path = glue('data/moneypuck_games/{current_full_season}/')
+  ))
+
+new_moneypuck_ids <- schedule_ds %>% 
+  filter(session == 'R' & 
+           season >= current_full_season & 
+           game_id != '2010020124' &
+           game_id != '2019030016' &
+           !(game_id %in% existing_moneypuck_ids) & 
+           game_status == 'Final' & 
+           game_date <= Sys.Date()) %>% 
+  collect() %>%
+  pull(game_id)
+
+new_moneypuck_ids
+
+map_df(new_moneypuck_ids, fx.scrape_moneypuck)
+
+
+# Natural Stat Trick scrape -----------------------------------------------
+
+# Grab existing NST games
+existing_nst_ids <-
+  gsub('.rds', '', dir(
+    path = glue('data/nst_games/{current_full_season}/')
+  ))
+
+new_nst_ids <- schedule_ds %>% 
+  filter(session == 'R' & 
+           season >= current_full_season & 
+           game_id != '2010020124' &
+           game_id != '2019030016' &
+           !(game_id %in% existing_nst_ids) & 
+           game_status == 'Final' & 
+           game_date <= Sys.Date()) %>% 
+  collect() %>%
+  pull(game_id)
+
+new_nst_ids
+
+map_df(new_nst_ids, fx.scrape_nst)
+
+con <- dbConnect(
+  pg,
+  dbname = dbname,
+  user = user,
+  password = password,
+  host = host,
+  port = port
+)
+
+fx.create_db_index(dbConnect(
+  RPostgres::Postgres(),
+  host = ifelse(
+    jsonlite::fromJSON(
+      readLines("http://api.hostip.info/get_json.php",
+                warn = F)
+    )$ip == Sys.getenv('ip'),
+    Sys.getenv('local'),
+    Sys.getenv('ip')
+  ),
+  port = Sys.getenv('postgres_port'),
+  user = Sys.getenv('db_user'),
+  password = Sys.getenv('db_password'),
+  dbname = proj_name,
+  # database = "football",
+  # Server = "localhost\\SQLEXPRESS",
+  # Database = "datawarehouse",
+  NULL
+))
 
 # http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster
 # http://www.nhl.com/scores/htmlreports/20192020/PL030113.HTM # Play by Play
