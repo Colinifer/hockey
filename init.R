@@ -230,14 +230,6 @@ new_nst_ids
 
 map_df(new_nst_ids, fx.scrape_nst)
 
-con <- dbConnect(
-  pg,
-  dbname = dbname,
-  user = user,
-  password = password,
-  host = host,
-  port = port
-)
 
 fx.create_db_index(dbConnect(
   RPostgres::Postgres(),
