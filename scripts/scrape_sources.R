@@ -7,30 +7,86 @@ csv_to_rds <- function(x){
 
 
 # Scrape Moneypuck
-fx.scrape_moneypuck <- function(x.gameid) {
-  print(glue('{x.gameid}'))
-  x.year <- substr(x.gameid,1,4) %>% as.integer()
-  mp_season_id <- glue('{x.year}{x.year+1}')
-  mp_base <- 'http://moneypuck.com/moneypuck/gameData'
-  mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
-    mutate(season = mp_season_id) %>% 
-    select(season,
-           everything())
+fx.scrape_moneypuck <- function(x) {
   
-  mp_csv %>% 
-    saveRDS(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
+  schedule_df <- get_nhl_schedule(x) %>% 
+    invisible()
   
-  mp_csv %>% 
-    bind_rows(
-      mp_ds %>% 
-        filter(season == mp_season_id) %>% 
-        collect()
-    ) %>% 
-    write_parquet(glue('data/moneypuck/{mp_season_id}/mp_{mp_season_id}.parquet'))
+  season_full <- schedule_df %>% 
+    pull(season) %>% 
+    first()
+  
+  # Game/PBP data
+  existing_ids <- mp_games_ds %>% 
+    filter(season == season_full) %>% 
+    pull(game_id) %>% 
+    unique()
+  
+  scrape_ids <- schedule_df %>% 
+    filter(!(game_id %in% existing_ids) & 
+             game_status == 'Final') %>% 
+    pull(game_id)
+  
+  map(scrape_ids, function(x.gameid) {
+    print(glue('{x.gameid}'))
+    x.year <- x
+    mp_season_id <- glue('{x.year}{x.year+1}')
+    
+    mp_base <- 'http://moneypuck.com/moneypuck/gameData'
+    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
+      mutate(season = mp_season_id) %>% 
+      select(season,
+             everything())
+    
+    mp_csv %>% 
+      saveRDS(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
+    
+    mp_csv %>% 
+      bind_rows(
+        mp_games_ds %>% 
+          filter(season == mp_season_id) %>% 
+          collect()
+      ) %>% 
+      write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
+  })
+  
+  # Player data
+  existing_ids <- mp_players_ds %>% 
+    filter(season == season_full) %>% 
+    pull(game_id) %>% 
+    unique()
+  
+  scrape_ids <- schedule_df %>% 
+    filter(!(game_id %in% existing_ids) & 
+             game_status == 'Final') %>% 
+    pull(game_id)
+  
+  map(scrape_ids, function(x.gameid) {
+    print(glue('{x.gameid}'))
+    x.year <- x
+    mp_season_id <- glue('{x.year}{x.year+1}')
+    
+    mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
+    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
+      mutate(season = mp_season_id) %>% 
+      select(season,
+             everything())
+    
+    mp_csv %>% 
+      saveRDS(glue('data/moneypuck_players/{mp_season_id}/{x.gameid}.rds'))
+    
+    mp_csv %>% 
+      bind_rows(
+        mp_players_ds %>% 
+          filter(season == mp_season_id) %>% 
+          collect()
+      ) %>% 
+      write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
+  })
   
   runif(1, 
         min=2, 
-        max=4
+        max=3
         ) %>% 
     Sys.sleep()
 }
@@ -39,6 +95,7 @@ fx.scrape_moneypuck <- function(x.gameid) {
 # Scrape Natural Stat Trick
 fx.scrape_nst <- function(x.gameid) {
   # x.gameid <- 2020020543
+  con <- initR::fx.db_con()
   print(x.gameid)
   nst_season_id <- glue('{x.gameid %>% substr(1,4) %>% as.integer()}{x.gameid %>% substr(1,4) %>% as.integer()+1}')
   nst_game_id <- substr(x.gameid,5,10) %>% as.integer()
@@ -49,8 +106,9 @@ fx.scrape_nst <- function(x.gameid) {
   print(glue('Downloading {x.gameid} from NST'))
   nst_page <- read_html(glue('{nst_base}{nst_url}'))
   
-  x.nst_away_team <- schedule_df %>%
-    filter(game_id == x.gameid) %>%
+  x.nst_away_team <- tbl(con, 'schedule') %>%
+    filter(game_id == x.gameid) %>% 
+    collect() %>% 
     mutate(nst_away_team = case_when(away_team == 'T.B' ~ 'TB',
                                  away_team == 'N.J' ~ 'NJ',
                                  away_team == 'S.J' ~ 'SJ',

@@ -118,10 +118,16 @@ open_dataset('data/report/', partitioning = 'year') %>%
   dplyr::mutate_if(names(.) %in% integer_columns, as.integer) %>% 
   DBI::dbWriteTable(con, 'report', ., append = TRUE, row.names = FALSE)
 
-open_dataset('data/moneypuck/', partitioning = 'year') %>%
+# Moneypuck
+open_dataset('data/moneypuck/games', partitioning = 'year') %>%
   collect() %>%
-  DBI::dbWriteTable(con, 'moneypuck', ., append = TRUE, row.names = FALSE)
+  DBI::dbWriteTable(con, 'moneypuck_games', ., append = TRUE, row.names = FALSE)
 
+open_dataset('data/moneypuck/players', partitioning = 'year') %>%
+  collect() %>%
+  DBI::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
+
+# NST
 open_dataset('data/nst/', partitioning = 'year') %>%
   collect() %>%
   DBI::dbWriteTable(con, 'nst', ., append = TRUE, row.names = FALSE)

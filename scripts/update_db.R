@@ -18,20 +18,7 @@ db_tables <- c(
 )
 
 # Refresh and save NHL schedule
-get_nhl_schedule <- function(x,
-                             db_driver = "PostgreSQL",
-                             dbname = proj_name,
-                             user =  Sys.getenv('db_user'),
-                             password = Sys.getenv('db_password'),
-                             host = ifelse(
-                               jsonlite::fromJSON(readLines(
-                                 "http://api.hostip.info/get_json.php",
-                                 warn = F
-                               ))$ip == Sys.getenv('ip'),
-                               Sys.getenv('local'),
-                               Sys.getenv('ip')
-                             ),
-                             port = Sys.getenv('postgres_port')){
+get_nhl_schedule <- function(x){
 
   # Scrape
   schedule_list <- nhlapi::nhl_schedule_seasons(x)
@@ -82,40 +69,22 @@ get_nhl_schedule <- function(x,
     write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
   
   # Connect to DB
-  hockey_db <- DBI::dbConnect(
-    RPostgres::Postgres(),
-    host = ifelse(
-      jsonlite::fromJSON(
-        readLines("http://api.hostip.info/get_json.php",
-                  warn = F)
-      )$ip == Sys.getenv('ip'),
-      Sys.getenv('local'),
-      Sys.getenv('ip')
-    ),
-    port = Sys.getenv('postgres_port'),
-    user = Sys.getenv('db_user'),
-    password = Sys.getenv('db_password'),
-    dbname = proj_name,
-    # database = "football",
-    # Server = "localhost\\SQLEXPRESS",
-    # Database = "datawarehouse",
-    NULL
-  )
+  con <- initR::fx.db_con()
   
   map("schedule", function(x){
-    DBI::dbSendQuery(hockey_db,
+    DBI::dbSendQuery(con,
                     glue('DELETE from {x} where season = {season_full}'))
   })
   
   map("schedule", function(x) {
-    DBI::dbWriteTable(hockey_db,
+    DBI::dbWriteTable(con,
                       x,
                       payload,
                       append = TRUE,
                       row.names = FALSE)
   })
   
-  DBI::dbDisconnect(hockey_db)
+  DBI::dbDisconnect(con)
   
   return(payload)
 }

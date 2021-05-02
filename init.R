@@ -56,7 +56,10 @@ if (any('bbplot' %in%
   library(devtools)
   devtools::install_github('bbc/bbplot')
 }
-invisible(lapply(pkgs, library, character.only = TRUE))
+invisible(lapply(pkgs, function(x){suppressMessages(suppressWarnings(library(x, 
+  warn.conflicts = FALSE,
+  quietly = TRUE, 
+  character.only = TRUE)))}))
 rm(pkgs, installed_packages)
 
 '%notin%' <- Negate('%in%')
@@ -70,25 +73,7 @@ fx.setdir(proj_name)
 # Create standard objects -------------------------------------------------
 
 # Connect to DB
-con <- dbConnect(
-  RPostgres::Postgres(),
-  host = ifelse(
-    jsonlite::fromJSON(
-      readLines("http://api.hostip.info/get_json.php",
-                warn = F)
-    )$ip == Sys.getenv('ip'),
-    Sys.getenv('local'),
-    Sys.getenv('ip')
-  ),
-  port = Sys.getenv('postgres_port'),
-  user = Sys.getenv('db_user'),
-  password = Sys.getenv('db_password'),
-  dbname = proj_name,
-  # database = "football",
-  # Server = "localhost\\SQLEXPRESS",
-  # Database = "datawarehouse",
-  NULL
-)
+con <- initR::fx.db_con()
 
 if ((
   Sys.Date() %>% lubridate::wday() > 1 & # If day is greater than Sunday
@@ -119,7 +104,8 @@ roster_ds <- open_dataset('data/roster/', partitioning = 'year')
 scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
 events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
 report_ds <- open_dataset('data/report/', partitioning = 'year')
-mp_ds <- open_dataset('data/moneypuck/', partitioning = 'year')
+mp_games_ds <- open_dataset('data/moneypuck/games/', partitioning = 'year')
+mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
 nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
 source('plots/assets/plot_theme.R', echo = F)
@@ -206,6 +192,7 @@ new_moneypuck_ids
 
 map_df(new_moneypuck_ids, fx.scrape_moneypuck)
 
+fx.scrape_moneypuck(current_season)
 
 # Natural Stat Trick scrape -----------------------------------------------
 
@@ -230,26 +217,7 @@ new_nst_ids
 
 map_df(new_nst_ids, fx.scrape_nst)
 
-
-fx.create_db_index(dbConnect(
-  RPostgres::Postgres(),
-  host = ifelse(
-    jsonlite::fromJSON(
-      readLines("http://api.hostip.info/get_json.php",
-                warn = F)
-    )$ip == Sys.getenv('ip'),
-    Sys.getenv('local'),
-    Sys.getenv('ip')
-  ),
-  port = Sys.getenv('postgres_port'),
-  user = Sys.getenv('db_user'),
-  password = Sys.getenv('db_password'),
-  dbname = proj_name,
-  # database = "football",
-  # Server = "localhost\\SQLEXPRESS",
-  # Database = "datawarehouse",
-  NULL
-))
+dbDisconnect(con)
 
 # http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster
 # http://www.nhl.com/scores/htmlreports/20192020/PL030113.HTM # Play by Play

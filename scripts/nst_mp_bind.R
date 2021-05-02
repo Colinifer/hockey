@@ -1,26 +1,70 @@
+mp_games_data <- do.call(bind_rows,
+                    lapply(list.files(
+                      path = glue('data/moneypuck_games/{current_full_season}'),
+                      pattern = '.rds',
+                      full.names = F
+                    ),
+                    function(x){
+                      df <- readRDS(glue('data/moneypuck_games/{current_full_season}/{x}')) %>% 
+                        # mutate(game_id = gsub("^.*\\.","", x))
+                        mutate(season = current_full_season,
+                               game_id = gsub("\\..*","", x) %>% as.integer()) %>% 
+                        select(
+                          season,
+                          game_id,
+                          everything(),
+                          NULL
+                        )
+                      return(df)
+                    }))
+
+mp_games_data %>%
+  write_parquet(glue('data/moneypuck/games/{current_full_season}/mp_games_{current_full_season}.parquet'))
+
+mp_players_data <- do.call(bind_rows,
+                          lapply(list.files(
+                            path = glue('data/moneypuck_players/{current_full_season}'),
+                            pattern = '.rds',
+                            full.names = F
+                          ),
+                          function(x){
+                            df <- readRDS(glue('data/moneypuck_players/{current_full_season}/{x}')) %>% 
+                              # mutate(game_id = gsub("^.*\\.","", x))
+                              mutate(season = current_full_season,
+                                     game_id = gsub("\\..*","", x) %>% as.integer()) %>% 
+                              select(
+                                season,
+                                game_id,
+                                everything(),
+                                NULL
+                              )
+                            return(df)
+                          }))
+
+mp_players_data %>%
+  write_parquet(glue('data/moneypuck/players/{current_full_season}/mp_players_{current_full_season}.parquet'))
+
+
 nst_data <- do.call(bind_rows,
-        lapply(list.files(
-          path = glue('data/nst_games/{new_season}'),
-          pattern = '.rds',
-          full.names = T
-        ),
-        readRDS)) 
+lapply(list.files(
+  path = glue('data/nst_games/{current_full_season}'),
+  pattern = '.rds',
+  full.names = F
+),
+function(x){
+  df <- readRDS(glue('data/nst_games/{current_full_season}/{x}')) %>% 
+    # mutate(game_id = gsub("^.*\\.","", x))
+    mutate(season = current_full_season,
+           game_id = gsub("\\..*","", x)) %>% 
+    select(game_id,
+           season, 
+           everything()
+           )
+  # saveRDS(glue('data/nst_games/{current_full_season}/cleaned/{x}'))
+  return(df)
+  }
+)
+)
 
 nst_data %>%
-  write_parquet(glue('data/nst/{new_season}/nst_{new_season}.parquet'))
-
-mp_data <- do.call(bind_rows,
-                    lapply(list.files(
-                      path = glue('data/moneypuck_games/{new_season}'),
-                      pattern = '.rds',
-                      full.names = T
-                    ),
-                    readRDS)) %>% 
-  mutate(season = new_season) %>% 
-  select(
-    season,
-    everything()
-  )
-
-mp_data %>%
-  write_parquet(glue('data/moneypuck/{new_season}/mp_{new_season}.parquet'))
+  write_parquet(glue('data/nst/{current_full_season}/nst_{current_full_season}.parquet'))
