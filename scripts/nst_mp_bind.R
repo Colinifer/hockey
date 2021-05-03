@@ -6,6 +6,7 @@ mp_games_data <- do.call(bind_rows,
                     ),
                     function(x){
                       df <- readRDS(glue('data/moneypuck_games/{current_full_season}/{x}')) %>% 
+                        janitor::clean_names() %>% 
                         # mutate(game_id = gsub("^.*\\.","", x))
                         mutate(season = current_full_season,
                                game_id = gsub("\\..*","", x) %>% as.integer()) %>% 
@@ -29,6 +30,7 @@ mp_players_data <- do.call(bind_rows,
                           ),
                           function(x){
                             df <- readRDS(glue('data/moneypuck_players/{current_full_season}/{x}')) %>% 
+                              janitor::clean_names() %>% 
                               # mutate(game_id = gsub("^.*\\.","", x))
                               mutate(season = current_full_season,
                                      game_id = gsub("\\..*","", x) %>% as.integer()) %>% 
@@ -37,7 +39,7 @@ mp_players_data <- do.call(bind_rows,
                                 game_id,
                                 everything(),
                                 NULL
-                              )
+                              ) %>% 
                             return(df)
                           }))
 
@@ -55,7 +57,7 @@ function(x){
   df <- readRDS(glue('data/nst_games/{current_full_season}/{x}')) %>% 
     # mutate(game_id = gsub("^.*\\.","", x))
     mutate(season = current_full_season,
-           game_id = gsub("\\..*","", x)) %>% 
+           game_id = gsub("\\..*","", x) %>% as.integer()) %>% 
     select(game_id,
            season, 
            everything()

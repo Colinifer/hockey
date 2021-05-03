@@ -56,10 +56,14 @@ if (any('bbplot' %in%
   library(devtools)
   devtools::install_github('bbc/bbplot')
 }
-invisible(lapply(pkgs, function(x){suppressMessages(suppressWarnings(library(x, 
-  warn.conflicts = FALSE,
-  quietly = TRUE, 
-  character.only = TRUE)))}))
+invisible(lapply(pkgs, function(x) {
+  suppressMessages(suppressWarnings(library(
+    x,
+    warn.conflicts = FALSE,
+    quietly = TRUE,
+    character.only = TRUE
+  )))
+}))
 rm(pkgs, installed_packages)
 
 '%notin%' <- Negate('%in%')
@@ -170,52 +174,8 @@ roster_df <- roster_ds %>%
   )
 
 map(current_season, annual_nhl_query)
-
-# Grab existing moneypuck games
-existing_moneypuck_ids <-
-  gsub('.rds', '', dir(
-    path = glue('data/moneypuck_games/{current_full_season}/')
-  ))
-
-new_moneypuck_ids <- schedule_ds %>% 
-  filter(session == 'R' & 
-           season >= current_full_season & 
-           game_id != '2010020124' &
-           game_id != '2019030016' &
-           !(game_id %in% existing_moneypuck_ids) & 
-           game_status == 'Final' & 
-           game_date <= Sys.Date()) %>% 
-  collect() %>%
-  pull(game_id)
-
-new_moneypuck_ids
-
-map_df(new_moneypuck_ids, fx.scrape_moneypuck)
-
-fx.scrape_moneypuck(current_season)
-
-# Natural Stat Trick scrape -----------------------------------------------
-
-# Grab existing NST games
-existing_nst_ids <-
-  gsub('.rds', '', dir(
-    path = glue('data/nst_games/{current_full_season}/')
-  ))
-
-new_nst_ids <- schedule_ds %>% 
-  filter(session == 'R' & 
-           season >= current_full_season & 
-           game_id != '2010020124' &
-           game_id != '2019030016' &
-           !(game_id %in% existing_nst_ids) & 
-           game_status == 'Final' & 
-           game_date <= Sys.Date()) %>% 
-  collect() %>%
-  pull(game_id)
-
-new_nst_ids
-
-map_df(new_nst_ids, fx.scrape_nst)
+map(current_season, fx.scrape_moneypuck)
+map(current_season, fx.scrape_nst)
 
 dbDisconnect(con)
 

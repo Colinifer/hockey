@@ -1,7 +1,7 @@
 
 
 # standings <-
-nhlapi::nhl_standings(seasons = 2010) %>%
+nhlapi::nhl_standings(seasons = 2020) %>%
   # select(teamRecords) %>%
   unnest(cols = c(teamRecords)) %>%
   as_tibble() %>%
@@ -28,8 +28,9 @@ nhlapi::nhl_standings(seasons = 2010) %>%
     -team_id,
     -goals_for,
     -goals_against,
-    -goal_differential ,
-    -def_scoring_rk,
-    -off_scoring_rk) %>% 
+    -goal_differential,
+    # -def_scoring_rk,
+    # -off_scoring_rk,
+    NULL) %>% 
   arrange(index)
 

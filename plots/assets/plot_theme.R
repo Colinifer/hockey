@@ -27,7 +27,18 @@ installed_packages <- pkgs %in%
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
-lapply(pkgs, library, character.only = TRUE)
+invisible(lapply(pkgs, function(x) {
+  suppressMessages(suppressWarnings(
+    library
+    (
+      x,
+      warn.conflicts = FALSE,
+      quietly = TRUE,
+      character.only = TRUE
+    )
+  ))
+}))
+rm(pkgs, installed_packages)
 
 # extrafont::font_import()
 extrafont::loadfonts(quiet = TRUE)
