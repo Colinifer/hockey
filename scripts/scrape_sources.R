@@ -36,7 +36,7 @@ fx.scrape_moneypuck <- function(x) {
     
     mp_base <- 'http://moneypuck.com/moneypuck/gameData'
     mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
-      mutate(game_id = game_id %>% as.integer(), 
+      mutate(game_id = x.gameid %>% as.integer(), 
              season = mp_season_id) %>% 
       select(game_id, 
              season,
@@ -48,7 +48,8 @@ fx.scrape_moneypuck <- function(x) {
     mp_csv %>% 
       bind_rows(
         mp_games_ds %>% 
-          filter(season == mp_season_id) %>% 
+          filter(season == mp_season_id & 
+                   game_id != x.gameid) %>% 
           collect()
       ) %>% 
       write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
@@ -89,7 +90,8 @@ fx.scrape_moneypuck <- function(x) {
     mp_csv %>% 
       bind_rows(
         mp_players_ds %>% 
-          filter(season == mp_season_id) %>% 
+          filter(season == mp_season_id & 
+                   game_id != x.gameid) %>% 
           collect()
       ) %>% 
       write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
@@ -117,7 +119,7 @@ fx.scrape_nst <- function(x) {
     first()
   
   # Game/PBP data
-  print('Scraping mp games')
+  print('Scraping NST games')
   existing_ids <- nst_ds %>% 
     filter(season == season_full) %>% 
     pull(game_id) %>% 
@@ -278,6 +280,8 @@ fx.scrape_nst <- function(x) {
     nst_scrape %>% 
       bind_rows(
         nst_ds %>% 
+          filter(season == nst_season_id &
+                   game_id != x.gameid) %>% 
           collect()
       ) %>% 
       write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
