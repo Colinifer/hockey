@@ -100,8 +100,8 @@ fx.scrape_moneypuck <- function(x) {
   })
   
   runif(1, 
-        min=2, 
-        max=3
+        min=1, 
+        max=1.5
         ) %>% 
     Sys.sleep()
 }
@@ -111,8 +111,8 @@ fx.scrape_moneypuck <- function(x) {
 fx.scrape_nst <- function(x) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
-    mutate(game_id = game_id %>% as.integer())
-  invisible()
+    mutate(game_id = game_id %>% as.integer()) %>% 
+    invisible()
   
   season_full <- schedule_df %>% 
     pull(season) %>% 
@@ -190,7 +190,7 @@ fx.scrape_nst <- function(x) {
     #   html_table()
     
     # Scrape and bind all tables
-    print(glue('Combining tables for {x.gameid}'))
+    # print(glue('Combining tables for {x.gameid}'))
     nst_scrape <- map_df(
       x.nst_table_ids %>%
         # x.nst_table_ids[c(1,6)] %>%
@@ -239,6 +239,7 @@ fx.scrape_nst <- function(x) {
       mutate(
         sh_percent = ifelse('sh_percent' %in% colnames(.) | sh_percent != '-', sh_percent %>% as.double(), NA),
         faceoffs_percent = ifelse(!is.na(faceoffs_won), faceoffs_won / (faceoffs_won + faceoffs_lost), NA),
+        season = nst_season_id,
         NULL
       ) %>% 
       select(
@@ -273,10 +274,11 @@ fx.scrape_nst <- function(x) {
       identity()
     
     # Save game tables to RDS
-    print(glue('Saving {x.gameid} to RDS'))
+    # print(glue('Saving {x.gameid} to RDS'))
     nst_scrape %>% 
       saveRDS(glue('data/nst_games/{nst_season_id}/{x.gameid}.rds'))
     
+    # print(glue('Saving {x.gameid} to parquet'))
     nst_scrape %>% 
       bind_rows(
         nst_ds %>% 
@@ -287,7 +289,7 @@ fx.scrape_nst <- function(x) {
       write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
     
     # Stall scrape timer
-    sleep_time <- runif(1, min=2, max=3)
+    sleep_time <- runif(1, min=1, max=1.5)
     print(glue('Sleeping {sleep_time}s before next request'))
     
     sleep_time %>% 
