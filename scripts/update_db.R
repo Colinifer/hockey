@@ -92,17 +92,20 @@ get_nhl_schedule <- function(x){
 # Get season data
 annual_nhl_query <- function(x) {
   
+  # print("Get schedule")
   schedule_df <- get_nhl_schedule(x) %>% 
     invisible()
   
+  # print("Got schedule")
   season_full <- schedule_df %>% 
     pull(season) %>% 
     first()
   
   # data_base_column_types <- readRDS('')
   # print(season)
+  # print("Getting IDs and dates")
   existing_ids <- game_info_ds %>% 
-    filter(season == season_full) %>% 
+    filter(season == season_full %>% as.character()) %>% 
     pull(game_id)
   
   season_start <- schedule_df %>% 
@@ -118,6 +121,8 @@ annual_nhl_query <- function(x) {
   
   date_grid <- tibble::tibble(start_date = dates, 
                               end_date = dates + 3)
+  
+  # print("Got IDs and dates")
   
   print(date_grid)
   

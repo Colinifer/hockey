@@ -20,7 +20,7 @@ fx.scrape_moneypuck <- function(x) {
   # Game/PBP data
   print('Scraping mp games')
   games_existing_ids <- mp_games_ds %>% 
-    filter(season == season_full) %>% 
+    filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
   
@@ -60,7 +60,7 @@ fx.scrape_moneypuck <- function(x) {
   # Player data
   print('Scraping mp players')
   players_existing_ids <- mp_players_ds %>% 
-    filter(season == season_full) %>% 
+    filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
   
@@ -121,7 +121,7 @@ fx.scrape_nst <- function(x) {
   # Game/PBP data
   print('Scraping NST games')
   existing_ids <- nst_ds %>% 
-    filter(season == season_full) %>% 
+    filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
   
