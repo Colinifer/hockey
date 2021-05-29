@@ -32,7 +32,7 @@ get_nhl_schedule <- function(x){
   schedule <- map_dfr(1:n_days, function(x) {
     schedule_list %>% 
       nth(1) %>% 
-      nth(7) %>% 
+      nth(8) %>% 
       pull(games) %>% 
       nth(x) %>% 
       as_tibble()
@@ -135,6 +135,7 @@ annual_nhl_query <- function(x) {
                             filter(game_date >= date_grid$start_date[.x] & 
                                      game_date <= date_grid$end_date[.x] & 
                                      !(game_id %in% existing_ids) & 
+                                     game_id != '2020030134' &
                                      game_status == 'Final') %>% 
                             pull(game_id)
                           scrape_ids %>% print()
