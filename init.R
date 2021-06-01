@@ -43,6 +43,7 @@ pkgs <- c(
   'lubridate',
   'snakecase',
   'nhlapi',
+  'sportyR',
   'nhlplot',
   'initR'
 )
