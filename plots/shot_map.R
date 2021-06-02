@@ -3,8 +3,8 @@ source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/
 
 x.game_id <- schedule_ds %>% 
   filter(game_status == 'Final' &
-           (home_team == 'COL' |
-              away_team == 'COL')) %>% 
+           (home_team == 'CAR' |
+              away_team == 'CAR')) %>% 
   collect() %>% 
   filter(row_number() == n()) %>% 
   pull(game_id)
@@ -25,6 +25,12 @@ pbp <- pbp_base_ds %>%
          coords_y) %>%
   collect() %>%
   mutate(
+    home_team_abbr = case_when(home_team_abbr == 'T.B' ~ 'TBL',
+                               TRUE ~ home_team_abbr),
+    away_team_abbr = case_when(away_team_abbr == 'T.B' ~ 'TBL',
+                               TRUE ~ away_team_abbr),
+    event_team_abbr = case_when(event_team_abbr == 'T.B' ~ 'TBL',
+                                TRUE ~ event_team_abbr),
     coords_x = case_when(game_period %% 2 == 0 ~ -1 * coords_x,
                          TRUE ~ coords_x),
     coords_y = case_when(game_period %% 2 == 0 ~ -1 * coords_y,
@@ -73,7 +79,7 @@ nhl_rink +
              shape = 16,
              color = pbp %>%
                filter(event_team_abbr == .$home_team) %>% 
-               pull(secondary),
+               pull(primary),
              size = 3
              ) + 
   geom_point(data =  pbp %>%
@@ -85,7 +91,7 @@ nhl_rink +
              shape = 16,
              color = pbp %>%
                filter(event_team_abbr == .$away_team) %>% 
-               pull(secondary),
+               pull(primary),
              size = 3
              ) + 
   labs(title = glue("shot chart: {current_season} NHL playoffs"),
