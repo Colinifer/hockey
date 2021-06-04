@@ -520,41 +520,40 @@ delete_and_upload <- function(scrape, season,
 #   group_by(season) %>%
 #   count() %>%
 #   collect()
+fx.delete_db_index <- function(hockey_db) {
+  queries <- c(
+    'DROP INDEX game_info_games;',
+    'DROP INDEX pbp_base_games;',
+    'DROP INDEX pbp_extras_games;',
+    'DROP INDEX player_periods_games;',
+    'DROP INDEX player_shifts_games;',
+    'DROP INDEX report_games;',
+    'DROP INDEX roster_games;',
+    'DROP INDEX schedule_games;',
+    'DROP INDEX scratches_games;'
+  )
+  
+  map(queries, function(x){
+    print(queries)
+    dbSendQuery(hockey_db, queries)
+  })
+}
 
-fx.create_db_index <- function(con) {
-  dbSendQuery(con, "DROP INDEX game_info_games;")
+fx.create_db_index <- function(hockey_db) {
+  queries <- c(
+    'CREATE INDEX game_info_games ON game_info (game_id);',
+    'CREATE INDEX pbp_base_games ON pbp_base (game_id);',
+    'CREATE INDEX pbp_extras_games ON pbp_extras (game_id);',
+    'CREATE INDEX player_periods_games ON player_periods (game_id);',
+    'CREATE INDEX player_shifts_games ON player_shifts (game_id);',
+    'CREATE INDEX report_games ON report (game_id);',
+    'CREATE INDEX roster_games ON roster (game_id);',
+    'CREATE INDEX schedule_games ON schedule (game_id);',
+    'CREATE INDEX scratches_games ON scratches (game_id);'
+  )
   
-  dbSendQuery(con, "CREATE INDEX game_info_games ON game_info (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX pbp_base_games;")
-  
-  dbSendQuery(con, "CREATE INDEX pbp_base_games ON pbp_base (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX pbp_extras_games;")
-  
-  dbSendQuery(con, "CREATE INDEX pbp_extras_games ON pbp_extras (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX player_periods_games;")
-  
-  dbSendQuery(con, "CREATE INDEX player_periods_games ON player_periods (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX player_shifts_games;")
-  
-  dbSendQuery(con, "CREATE INDEX player_shifts_games ON player_shifts (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX report_games;")
-  
-  dbSendQuery(con, "CREATE INDEX report_games ON report (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX roster_games;")
-  
-  dbSendQuery(con, "CREATE INDEX roster_games ON roster (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX schedule_games;")
-  
-  dbSendQuery(con, "CREATE INDEX schedule_games ON schedule (game_id);")
-  
-  dbSendQuery(con, "DROP INDEX scratches_games;")
-  
-  dbSendQuery(con, "CREATE INDEX scratches_games ON scratches (game_id);")
+  map(queries, function(x){
+    print(queries)
+    dbSendQuery(hockey_db, queries)
+  })
 }
