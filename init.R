@@ -42,6 +42,7 @@ pkgs <- c(
   'foreach',
   'lubridate',
   'snakecase',
+  'Matrix',
   'nhlapi',
   'sportyR',
   'nhlplot',
@@ -114,13 +115,17 @@ mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
 nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
 source('plots/assets/plot_theme.R', echo = F)
-source('EH_scrape_functions.R')
+source('scripts/EH_scrape_functions.R')
 source('scripts/update_db.R')
 source('scripts/scrape_sources.R')
+# source('scripts/all_functions.R')
+# source('scripts/all_stats.R')
+# source('scripts/misc_functions.R')
 
 active_players <- nhlapi::nhl_teams_rosters() %>% 
   unnest(roster.roster) %>% 
-  as_tibble()
+  as_tibble() %>% 
+  janitor::clean_names()
 
 roster_df <- roster_ds %>% 
   filter(season == current_full_season) %>% 
@@ -143,10 +148,11 @@ roster_df <- roster_ds %>%
   left_join(
     active_players %>% 
       select(
-        team_name = teamName,
-        full_name = person.fullName,
-        jersey_number = jerseyNumber,
-        player_id = person.id
+        team_name,
+        full_name = person_full_name,
+        jersey_number,
+        player_id = person_id,
+        NULL
       ) %>% 
       mutate(
         full_name = full_name %>% toupper(),

@@ -3,10 +3,10 @@ source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/
 
 x.game_id <- schedule_ds %>% 
   filter(game_status == 'Final' &
-           (home_team == 'CAR' |
-              away_team == 'CAR')) %>% 
+           (home_team == 'MTL' |
+              away_team == 'MTL')) %>% 
   collect() %>% 
-  filter(row_number() == n()) %>% 
+  filter(row_number() == n()) %>%
   pull(game_id)
 
 nhl_rink <- geom_hockey('nhl')
@@ -20,6 +20,8 @@ pbp <- pbp_base_ds %>%
   select(home_team_abbr = home_team,
          away_team_abbr = away_team,
          event_team_abbr = event_team,
+         event_type,
+         event_player_1,
          game_period,
          coords_x,
          coords_y) %>%
@@ -66,34 +68,59 @@ pbp <- pbp_base_ds %>%
 #   as_tibble()
 
 nhl_rink +
-  # ggplot(aes(x = coords_x, y = coords_y)) +
   # gg_rink(side = "right", specs = "nhl") +
   # gg_rink(side = "left", specs = "nhl") +
   # geom_point(aes(x = coords_x, y = coords_y)) + 
-  geom_point(data = pbp %>%
-               filter(event_team_abbr == .$home_team), 
-             aes(
-               coords_x, 
-               coords_y
-               ),
-             shape = 16,
-             color = pbp %>%
-               filter(event_team_abbr == .$home_team) %>% 
-               pull(primary),
-             size = 3
-             ) + 
-  geom_point(data =  pbp %>%
-               filter(event_team_abbr == .$away_team), 
-             aes(
-               coords_x, 
-               coords_y
-               ),
-             shape = 16,
-             color = pbp %>%
-               filter(event_team_abbr == .$away_team) %>% 
-               pull(primary),
-             size = 3
-             ) + 
+  # geom_point(data = pbp %>%
+  #              filter(event_team_abbr == .$home_team), 
+  #            aes(
+  #              coords_x, 
+  #              coords_y
+  #              ),
+  #            shape = 16,
+  #            color = pbp %>%
+  #              filter(event_team_abbr == .$home_team) %>% 
+  #              pull(primary),
+  #            size = 3
+  #            ) + 
+  # geom_point(data =  pbp %>%
+  #              filter(event_team_abbr == .$away_team), 
+  #            aes(
+  #              coords_x, 
+  #              coords_y
+  #              ),
+  #            shape = 16,
+  #            color = pbp %>%
+  #              filter(event_team_abbr == .$away_team) %>% 
+  #              pull(primary),
+  #            size = 3
+  #            ) + 
+  geom_hex(data =  pbp %>%
+             filter(event_team_abbr == .$home_team),
+           aes(
+             coords_x,
+             coords_y
+           ),
+           binwidth = c(5, 5),
+           alpha = .75
+  ) +
+  geom_hex(data =  pbp %>%
+             filter(event_team_abbr == .$away_team),
+           aes(
+             coords_x, 
+             coords_y
+           ), 
+           binwidth = c(5, 5), 
+           alpha = .75
+  ) + 
+  geom_text_repel(
+      data = pbp %>%
+        filter(event_type == 'GOAL'),
+      aes(x = coords_x , y = coords_y, label = paste(event_player_1)),
+      size = 5,
+      box.padding = unit(0.35, "lines"),
+      point.padding = unit(0.3, "lines")
+      ) +
   labs(title = glue("shot chart: {current_season} NHL playoffs"),
        subtitle = "NHL rink",
        x = NULL,
