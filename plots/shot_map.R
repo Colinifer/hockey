@@ -1,22 +1,28 @@
 source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/hockey-rink.R'))
 source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/gg-rink.R'))
 
+iso_team <- 'NYI'
+
 x.game_id <- schedule_ds %>% 
   filter(game_status == 'Final' &
-           (home_team == 'MTL' |
-              away_team == 'MTL')) %>% 
+           (home_team == iso_team |
+              away_team == iso_team)) %>% 
   collect() %>% 
-  filter(row_number() == n()) %>%
+  mutate(game_id = game_id %>% as.integer()) %>% 
+  arrange(-game_id) %>% 
+  # filter(row_number() == n()) %>%
+  head(5) %>% 
   pull(game_id)
 
-nhl_rink <- geom_hockey('nhl')
+nhl_rink <- geom_hockey('nhl', full_surf = F, rotate = T, rotation_dir = 'ccw')
 
 x.game_id
 
 pbp <- pbp_base_ds %>%
   filter(season == current_full_season &
            game_id %in% x.game_id &
-           event_type %in% c('SHOT', 'MISS', 'GOAL')) %>%
+           event_type %in% c('SHOT', 'MISS', 'GOAL') & 
+           event_team == iso_team) %>%
   select(home_team_abbr = home_team,
          away_team_abbr = away_team,
          event_team_abbr = event_team,
@@ -33,10 +39,14 @@ pbp <- pbp_base_ds %>%
                                TRUE ~ away_team_abbr),
     event_team_abbr = case_when(event_team_abbr == 'T.B' ~ 'TBL',
                                 TRUE ~ event_team_abbr),
-    coords_x = case_when(game_period %% 2 == 0 ~ -1 * coords_x,
-                         TRUE ~ coords_x),
-    coords_y = case_when(game_period %% 2 == 0 ~ -1 * coords_y,
-                         TRUE ~ coords_y)
+    # coords_x = case_when(game_period %% 2 == 0 ~ -1 * coords_x,
+    #                      TRUE ~ coords_x),
+    # coords_y = case_when(game_period %% 2 == 0 ~ -1 * coords_y,
+    #                      TRUE ~ coords_y)
+    coords_x = ifelse(event_team_abbr == iso_team & coords_x > 0, -1 * coords_x, coords_x),
+    coords_y = ifelse(event_team_abbr == iso_team & coords_x > 0, -1 * coords_y, coords_y),
+    coords_x = ifelse(event_team_abbr != iso_team & coords_x < 0, -1 * coords_x, coords_x),
+    coords_y = ifelse(event_team_abbr != iso_team & coords_x < 0, -1 * coords_y, coords_y)
   ) %>% 
   left_join(
     nhlapi::nhl_teams() %>% 
@@ -98,8 +108,8 @@ nhl_rink +
   geom_hex(data =  pbp %>%
              filter(event_team_abbr == .$home_team),
            aes(
-             coords_x,
-             coords_y
+             coords_y,
+             coords_x
            ),
            binwidth = c(5, 5),
            alpha = .75
@@ -107,8 +117,8 @@ nhl_rink +
   geom_hex(data =  pbp %>%
              filter(event_team_abbr == .$away_team),
            aes(
-             coords_x, 
-             coords_y
+             coords_y, 
+             coords_x
            ), 
            binwidth = c(5, 5), 
            alpha = .75
@@ -116,7 +126,7 @@ nhl_rink +
   geom_text_repel(
       data = pbp %>%
         filter(event_type == 'GOAL'),
-      aes(x = coords_x , y = coords_y, label = paste(event_player_1)),
+      aes(x = coords_y , y = coords_x, label = paste(event_player_1)),
       size = 5,
       box.padding = unit(0.35, "lines"),
       point.padding = unit(0.3, "lines")
