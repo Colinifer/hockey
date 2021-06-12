@@ -1,7 +1,7 @@
-source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/hockey-rink.R'))
-source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/gg-rink.R'))
+# source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/hockey-rink.R'))
+# source(url('https://github.com/mtthwastn/statswithmatt/raw/master/hockey-with-r/gg-rink.R'))
 
-iso_team <- 'NYI'
+iso_team <- 'COL'
 
 x.game_id <- schedule_ds %>% 
   filter(game_status == 'Final' &
@@ -114,15 +114,15 @@ nhl_rink +
            binwidth = c(5, 5),
            alpha = .75
   ) +
-  geom_hex(data =  pbp %>%
-             filter(event_team_abbr == .$away_team),
-           aes(
-             coords_y, 
-             coords_x
-           ), 
-           binwidth = c(5, 5), 
-           alpha = .75
-  ) + 
+  # geom_hex(data =  pbp %>%
+  #            filter(event_team_abbr == .$away_team),
+  #          aes(
+  #            coords_y, 
+  #            coords_x
+  #          ), 
+  #          binwidth = c(5, 5), 
+  #          alpha = .75
+  # ) + 
   geom_text_repel(
       data = pbp %>%
         filter(event_type == 'GOAL'),
