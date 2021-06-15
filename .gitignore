@@ -1,4 +1,5 @@
 .RData.Tmp
+.code-workspace
 *.DS_Store
 *.pper
 *.csv

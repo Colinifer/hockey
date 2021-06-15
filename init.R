@@ -1,7 +1,11 @@
-# Packages & Init Setup ---------------------------------------------------
-proj_name <- 'hockey'
-# setwd('~/Documents/dev/hockey')
+# Most of this package assumes my private R package initR is pre-installed
+# and an existing PostgreSQL environment is running on your local
+# machine and/or network.
 
+
+# Packages & Init Setup ---------------------------------------------------
+
+proj_name <- 'hockey'
 # devtools::install_github('bbc/bbplot')
 # devtools::install_github('war-on-ice/nhlplot')
 
@@ -9,7 +13,7 @@ pkgs <- c(
   'devtools',
   'tidyverse',
   'RPostgres',
-  # 'RMariaDB',
+  # 'RMariaDB', # deprecated, new environment is running PostgreSQL
   'DBI',
   'readr',
   'pander',
@@ -58,6 +62,7 @@ if (any('bbplot' %in%
   library(devtools)
   devtools::install_github('bbc/bbplot')
 }
+# Load all installed packages, install and load any uninstalled packages
 invisible(lapply(pkgs, function(x) {
   suppressMessages(suppressWarnings(library(
     x,
@@ -68,29 +73,16 @@ invisible(lapply(pkgs, function(x) {
 }))
 rm(pkgs, installed_packages)
 
-'%notin%' <- Negate('%in%')
-
-options(tibble.print_min=25)
-
-# Initialize Working Directory --------------------------------------------
+# Initialize working directory --------------------------------------------
 
 fx.setdir(proj_name)
 
 # Create standard objects -------------------------------------------------
 
-# Connect to DB
-con <- initR::fx.db_con()
+con <- initR::fx.db_con() # connect to DB using personal initR functions
 
-if ((
-  Sys.Date() %>% lubridate::wday() > 1 & # If day is greater than Sunday
-  Sys.Date() %>% lubridate::wday() < 6 & # and day is less than Saturday
-  Sys.time() %>% format("%H") %>% as.integer() >= 17 & # and greater than 5PM
-  Sys.time() %>% format("%H") %>% as.integer() <= 23 # and less than 12AM
-) == TRUE) {
-  # source("../initR/con.R")
-  dbListTables(con)
-  dbDisconnect(con)
-}
+'%notin%' <- Negate('%in%') # opposite of %in%
+options(tibble.print_min=25) # expand default tibble preview
 
 current_season <- 2020
 current_full_season <- glue('{current_season}{current_season+1}')
@@ -100,6 +92,8 @@ date <- Sys.Date()
 today <- format(Sys.Date(), '%Y-%d-%m')
 
 # f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
+
+# Open backup parquet files for fast offline viewing
 schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
 game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
 pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
@@ -114,19 +108,22 @@ mp_games_ds <- open_dataset('data/moneypuck/games/', partitioning = 'year')
 mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
 nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
+# Source other files with various functions and ggproto objects
 source('plots/assets/plot_theme.R', echo = F)
-source('scripts/EH_scrape_functions.R')
-source('scripts/update_db.R')
-source('scripts/scrape_sources.R')
+source('scripts/EH_scrape_functions.R', echo = F)
+source('scripts/update_db.R', echo = F)
+source('scripts/scrape_sources.R', echo = F)
 # source('scripts/all_functions.R')
 # source('scripts/all_stats.R')
 # source('scripts/misc_functions.R')
 
+# Get latest rosters
 active_players <- nhlapi::nhl_teams_rosters() %>% 
   unnest(roster.roster) %>% 
   as_tibble() %>% 
   janitor::clean_names()
 
+# Load roster db and join with latest roster scrape
 roster_df <- roster_ds %>% 
   filter(season == current_full_season) %>% 
   select(-game_id,
@@ -180,12 +177,19 @@ roster_df <- roster_ds %>%
     action_shot_url = glue('https://cms.nhl.bamgrid.com/images/actionshots/{player_id}.jpg')
   )
 
+
+# Update database ---------------------------------------------------------
+
+# Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
+# Updates database with latest data from Moneypuck
 map(current_season, fx.scrape_moneypuck)
+# Latest data from NaturalStatTrick
 map(current_season, fx.scrape_nst)
 
-dbDisconnect(con)
 
+
+# Sample links:
 # http://www.nhl.com/scores/htmlreports/20192020/RO030113.HTM # Roster
 # http://www.nhl.com/scores/htmlreports/20192020/PL030113.HTM # Play by Play
 # http://www.nhl.com/scores/htmlreports/20192020/GS020113.HTM # Game Summary
