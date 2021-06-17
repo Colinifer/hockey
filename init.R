@@ -6,6 +6,7 @@
 # Packages & Init Setup ---------------------------------------------------
 
 proj_name <- 'hockey'
+# devtools::install_github('Colinifer/initR', auth_token = Sys.getenv('authtoken'))
 # devtools::install_github('bbc/bbplot')
 # devtools::install_github('war-on-ice/nhlplot')
 
@@ -13,6 +14,7 @@ pkgs <- c(
   'devtools',
   'tidyverse',
   'RPostgres',
+  'RPostgreSQL',
   # 'RMariaDB', # deprecated, new environment is running PostgreSQL
   'DBI',
   'readr',
@@ -80,6 +82,8 @@ fx.setdir(proj_name)
 # Create standard objects -------------------------------------------------
 
 con <- initR::fx.db_con() # connect to DB using personal initR functions
+dbListTables(con)
+dbDisconnect(con)
 
 '%notin%' <- Negate('%in%') # opposite of %in%
 options(tibble.print_min=25) # expand default tibble preview
@@ -111,7 +115,7 @@ nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 # Source other files with various functions and ggproto objects
 source('plots/assets/plot_theme.R', echo = F)
 source('scripts/EH_scrape_functions.R', echo = F)
-source('scripts/update_db.R', echo = F)
+source('scripts/m1_update_db.R', echo = F)
 source('scripts/scrape_sources.R', echo = F)
 # source('scripts/all_functions.R')
 # source('scripts/all_stats.R')
@@ -124,7 +128,7 @@ active_players <- nhlapi::nhl_teams_rosters() %>%
   janitor::clean_names()
 
 # Load roster db and join with latest roster scrape
-roster_df <- roster_ds %>% 
+roster_df <- tbl(fx.db_con(), 'roster') %>% 
   filter(season == current_full_season) %>% 
   select(-game_id,
          -game_date,
