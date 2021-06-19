@@ -59,10 +59,11 @@ installed_packages <- pkgs %in%
 if (any(installed_packages == FALSE)) {
   install.packages(pkgs[!installed_packages])
 }
-if (any('bbplot' %in%
+if (any(c('bbplot', 'initR') %in%
         rownames(installed.packages()) == FALSE)) {
   library(devtools)
   devtools::install_github('bbc/bbplot')
+  devtools::install_github('Colinifer/initR', auth_token = Sys.getenv('authtoken'))
 }
 # Load all installed packages, install and load any uninstalled packages
 invisible(lapply(pkgs, function(x) {
@@ -98,25 +99,25 @@ today <- format(Sys.Date(), '%Y-%d-%m')
 # f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
 
 # Open backup parquet files for fast offline viewing
-schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
-game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
-pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
-pbp_extras_ds <- open_dataset('data/pbp_extras', partitioning = 'year')
-player_shifts_ds <- open_dataset('data/player_shifts', partitioning = 'year')
-player_periods_ds <- open_dataset('data/player_periods', partitioning = 'year')
-roster_ds <- open_dataset('data/roster/', partitioning = 'year')
-scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
-events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
-report_ds <- open_dataset('data/report/', partitioning = 'year')
-mp_games_ds <- open_dataset('data/moneypuck/games/', partitioning = 'year')
-mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
-nst_ds <- open_dataset('data/nst/', partitioning = 'year')
+# schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
+# game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
+# pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
+# pbp_extras_ds <- open_dataset('data/pbp_extras', partitioning = 'year')
+# player_shifts_ds <- open_dataset('data/player_shifts', partitioning = 'year')
+# player_periods_ds <- open_dataset('data/player_periods', partitioning = 'year')
+# roster_ds <- open_dataset('data/roster/', partitioning = 'year')
+# scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
+# events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
+# report_ds <- open_dataset('data/report/', partitioning = 'year')
+# mp_games_ds <- open_dataset('data/moneypuck/games/', partitioning = 'year')
+# mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
+# nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
 # Source other files with various functions and ggproto objects
 source('plots/assets/plot_theme.R', echo = F)
 source('scripts/EH_scrape_functions.R', echo = F)
 source('scripts/m1_update_db.R', echo = F)
-source('scripts/scrape_sources.R', echo = F)
+source('scripts/m1_scrape_sources.R', echo = F)
 # source('scripts/all_functions.R')
 # source('scripts/all_stats.R')
 # source('scripts/misc_functions.R')

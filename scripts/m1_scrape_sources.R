@@ -19,10 +19,12 @@ fx.scrape_moneypuck <- function(x) {
   
   # Game/PBP data
   print('Scraping mp games')
-  games_existing_ids <- tbl(fx.db_con(), 'moneypuck') %>% 
+  con <- fx.db_con()
+  games_existing_ids <- tbl(con, 'moneypuck_games') %>% 
     filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
+  dbDisconnect(con)
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% games_existing_ids) & 
@@ -36,33 +38,45 @@ fx.scrape_moneypuck <- function(x) {
     
     mp_base <- 'http://moneypuck.com/moneypuck/gameData'
     mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
-      mutate(game_id = x.gameid %>% as.integer(), 
-             season = mp_season_id) %>% 
-      select(game_id, 
-             season,
-             everything())
+      janitor::clean_names() %>% 
+      # mutate(game_id = gsub("^.*\\.","", x))
+      mutate(season = mp_season_id,
+             game_id = x.gameid) %>% 
+      select(
+        season,
+        game_id,
+        everything(),
+        NULL
+      )
     
     mp_csv %>% 
       saveRDS(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
     
+    # mp_csv %>% 
+    #   bind_rows(
+    #     mp_games_ds %>% 
+    #       filter(season == mp_season_id & 
+    #                game_id != x.gameid) %>% 
+    #       collect()
+    #   ) %>% 
+    #   write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
+    
+    con <- fx.db_con()
     mp_csv %>% 
-      bind_rows(
-        mp_games_ds %>% 
-          filter(season == mp_season_id & 
-                   game_id != x.gameid) %>% 
-          collect()
-      ) %>% 
-      write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
+      RPostgres::dbWriteTable(con, 'moneypuck_games', ., append = TRUE, row.names = FALSE)
+    dbDisconnect(con)
     
     gc()
   })
   
   # Player data
   print('Scraping mp players')
-  players_existing_ids <- mp_players_ds %>% 
+  con <- fx.db_con()
+  players_existing_ids <- tbl(con, 'moneypuck_players') %>% 
     filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
+  dbDisconnect(con)
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% players_existing_ids) & 
@@ -77,7 +91,7 @@ fx.scrape_moneypuck <- function(x) {
     mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
     mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
       janitor::clean_names() %>%
-      mutate(game_id = game_id %>% as.integer(),
+      mutate(game_id = x.gameid,
              season = mp_season_id
              ) %>% 
       select(game_id, 
@@ -87,23 +101,28 @@ fx.scrape_moneypuck <- function(x) {
     mp_csv %>% 
       saveRDS(glue('data/moneypuck_players/{mp_season_id}/{x.gameid}.rds'))
     
+    # mp_csv %>% 
+    #   bind_rows(
+    #     mp_players_ds %>% 
+    #       filter(season == mp_season_id & 
+    #                game_id != x.gameid) %>% 
+    #       collect()
+    #   ) %>% 
+    #   write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
+
+    con <- fx.db_con()
     mp_csv %>% 
-      bind_rows(
-        mp_players_ds %>% 
-          filter(season == mp_season_id & 
-                   game_id != x.gameid) %>% 
-          collect()
-      ) %>% 
-      write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
+      RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
+    dbDisconnect(con)
     
     gc()
   })
   
-  runif(1, 
-        min=1, 
-        max=1.5
-        ) %>% 
-    Sys.sleep()
+  # runif(1, 
+  #       min=1, 
+  #       max=1.5
+  #       ) %>% 
+  #   Sys.sleep()
 }
 
 
@@ -120,10 +139,12 @@ fx.scrape_nst <- function(x) {
   
   # Game/PBP data
   print('Scraping NST games')
-  existing_ids <- nst_ds %>% 
+  con <- fx.db_con()
+  existing_ids <- tbl(con, 'nst') %>% 
     filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
+  dbDisconnect(con)
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% existing_ids) & 
@@ -279,21 +300,26 @@ fx.scrape_nst <- function(x) {
       saveRDS(glue('data/nst_games/{nst_season_id}/{x.gameid}.rds'))
     
     # print(glue('Saving {x.gameid} to parquet'))
+    # nst_scrape %>% 
+    #   bind_rows(
+    #     nst_ds %>% 
+    #       filter(season == nst_season_id &
+    #                game_id != x.gameid) %>% 
+    #       collect()
+    #   ) %>% 
+    #   write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
+    
+    con <- fx.db_con()
     nst_scrape %>% 
-      bind_rows(
-        nst_ds %>% 
-          filter(season == nst_season_id &
-                   game_id != x.gameid) %>% 
-          collect()
-      ) %>% 
-      write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
+      RPostgres::dbWriteTable(con, 'nst', ., append = TRUE, row.names = FALSE)
+    dbDisconnect(con)
     
     # Stall scrape timer
-    sleep_time <- runif(1, min=1, max=1.5)
-    print(glue('Sleeping {sleep_time}s before next request'))
-    
-    sleep_time %>% 
-      Sys.sleep()
+    # sleep_time <- runif(1, min=1, max=1.5)
+    # print(glue('Sleeping {sleep_time}s before next request'))
+    # 
+    # sleep_time %>% 
+    #   Sys.sleep()
   })
  #
 }

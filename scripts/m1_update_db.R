@@ -186,7 +186,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- game_info %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting game_info duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from game_info WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from game_info WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading game_info scrape'))
                             map("game_info", function(x) {
@@ -213,7 +213,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- pbp_base %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting pbp_base duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_base WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_base WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading pbp_base scrape'))
                             map("pbp_base", function(x) {
@@ -240,7 +240,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- pbp_extras %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting pbp_extras duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_extras WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_extras WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading pbp_extras scrape'))
                             map("pbp_extras", function(x) {
@@ -267,7 +267,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- player_shifts %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting player_shifts duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_shifts WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_shifts WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading player_shifts scrape'))
                             map("player_shifts", function(x) {
@@ -294,7 +294,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- player_periods %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting player_periods duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_periods WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_periods WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading player_periods scrape'))
                             map("player_periods", function(x) {
@@ -321,7 +321,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- roster %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting roster duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from roster WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from roster WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading roster scrape'))
                             map("roster", function(x) {
@@ -348,7 +348,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- scratches %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting scratches duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from scratches WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from scratches WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading scratches scrape'))
                             map("scratches", function(x) {
@@ -375,7 +375,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- events_summary %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting events_summary duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from events_summary WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from events_summary WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading events_summary scrape'))
                             map("events_summary", function(x) {
@@ -402,7 +402,7 @@ annual_nhl_query <- function(x) {
                             game_ids <- report %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting report duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from report WHERE game_id IN ({paste0(game_ids, collapse = ',')});')) # doesn't work
+                            DBI::dbSendQuery(hockey_db, glue('DELETE from report WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading report scrape'))
                             map("report", function(x) {
