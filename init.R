@@ -39,6 +39,7 @@ pkgs <- c(
   'ggforce',
   'ggridges',
   'ggrepel',
+  'hexbin',
   'ggbeeswarm',
   'extrafont',
   'RCurl',
