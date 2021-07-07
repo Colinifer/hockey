@@ -3,22 +3,32 @@ library(xgboost)
 # X = 100max -100min
 # Y = 42max -42min
 
-pbp_mutate <- pbp_base_ds %>% 
+con <- fx.db_con()
+pbp <- tbl(con, 'pbp_base') %>% 
   filter(season %in% c('20202021')) %>% 
-  collect() %>% 
-  as_tibble() %>% 
-  mutate(prev_event = lag(event_type),
-         seconds_since_last_event = game_seconds - lag(game_seconds)
-         ) %>% 
+  collect()
+dbDisconnect(con)
+
+# Prep pbp mutations for xG model
+pbp_mutate <- pbp %>% 
+  group_by(game_id) %>% 
+  arrange(season, game_id, event_index) %>% 
+  mutate(
+    prev_event = dplyr::lag(event_type),
+    seconds_since_last_event = game_seconds - dplyr::lag(game_seconds)
+    ) %>% 
   arrange(season, game_id, event_type, event_index) %>% 
   mutate(
-    seconds_since_last_shot = ifelse(
-      event_type == 'SHOT', 
-      game_seconds - lag(game_seconds), 
-      NA
-      )
-    ) %>% 
-  arrange(season, game_id, event_index) %>% 
+    # seconds_since_last_shot = ifelse(
+    #   event_type == 'SHOT', 
+    #   game_seconds - dplyr::lag(game_seconds, n = 1, default = NA), 
+    #   NA
+    # ),
+    seconds_since_last_shot = case_when(
+      event_type %in% st.corsi_events ~ game_seconds - dplyr::lag(game_seconds, default = NA)
+    )
+  ) %>% 
+  arrange(season, game_id, event_index) %>% head(40) %>% view()
   mutate(
     # https://thewincolumn.ca/2021/01/15/r-tutorial-creating-an-nhl-rink-using-the-tidyverse/
     event_distance = ifelse(event_type %in% st.corsi_events,
