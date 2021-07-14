@@ -15,9 +15,11 @@ pbp_mutate <- pbp %>%
   arrange(season, game_id, event_index) %>% 
   mutate(
     prev_event = dplyr::lag(event_type),
-    seconds_since_last_event = game_seconds - dplyr::lag(game_seconds)
+    seconds_since_last_event = game_seconds - dplyr::lag(game_seconds),
+    is_corsi_event = ifelse(event_type %in% st.corsi_events == TRUE, TRUE, FALSE)
     ) %>% 
-  arrange(season, game_id, event_type, event_index) %>% 
+  arrange(season, game_id, is_corsi_event, event_index) %>% 
+  group_by(game_id, is_corsi_event) %>% 
   mutate(
     # seconds_since_last_shot = ifelse(
     #   event_type == 'SHOT', 
@@ -25,11 +27,8 @@ pbp_mutate <- pbp %>%
     #   NA
     # ),
     seconds_since_last_shot = case_when(
-      event_type %in% st.corsi_events ~ game_seconds - dplyr::lag(game_seconds, default = NA)
-    )
-  ) %>% 
-  arrange(season, game_id, event_index) %>% head(40) %>% view()
-  mutate(
+      is_corsi_event == TRUE ~ game_seconds - dplyr::lag(game_seconds, default = NA)
+    ),
     # https://thewincolumn.ca/2021/01/15/r-tutorial-creating-an-nhl-rink-using-the-tidyverse/
     event_distance = ifelse(event_type %in% st.corsi_events,
                             sqrt((((89) - abs(coords_x)
