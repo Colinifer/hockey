@@ -85,10 +85,11 @@ fx.setdir(proj_name)
 
 con <- initR::fx.db_con() # connect to DB using personal initR functions
 dbListTables(con)
+map(.x=dbListTables(con), ~tbl(con, .x))
 dbDisconnect(con)
 
 '%notin%' <- Negate('%in%') # opposite of %in%
-options(tibble.print_min=25) # expand default tibble preview
+options(tibble.print_min=10) # expand default tibble preview
 
 current_season <- 2020
 current_full_season <- glue('{current_season}{current_season+1}')
