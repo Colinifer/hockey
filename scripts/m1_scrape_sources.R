@@ -12,6 +12,11 @@ fx.scrape_moneypuck <- function(x) {
   schedule_df <- get_nhl_schedule(x) %>% 
     mutate(game_id = game_id %>% as.integer())
     invisible()
+    
+  if (x == 2015) {
+    schedule_df <- schedule_df %>% 
+      filter(game_id >= 2015020624)
+  }
   
   season_full <- schedule_df %>% 
     pull(season) %>% 
@@ -50,7 +55,7 @@ fx.scrape_moneypuck <- function(x) {
       )
     
     mp_csv %>% 
-      saveRDS(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
+      write_rds(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
     
     # mp_csv %>% 
     #   bind_rows(
