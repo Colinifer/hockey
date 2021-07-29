@@ -108,12 +108,13 @@ annual_nhl_query <- function(x) {
     filter(season == season_full) %>% 
     pull(game_id)
   
-  bad_ids <- c(2008010005,
-               2008010004,
-               2008010008,
-               2008010011,
-               2008010017,
-               NULL)
+  bad_ids <- c(
+    # 2008010005,
+    # 2008010004,
+    # 2008010008,
+    # 2008010011,
+    # 2008010017,
+    NULL)
   
   season_start <- schedule_df %>% 
     head(1) %>% 
