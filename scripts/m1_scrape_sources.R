@@ -10,7 +10,8 @@ csv_to_rds <- function(x){
 fx.scrape_moneypuck <- function(x) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
-    mutate(game_id = game_id %>% as.integer())
+    mutate(game_id = game_id %>% as.integer()) %>% 
+    filter(session != 'PR') %>% 
     invisible()
     
   if (x == 2015) {
