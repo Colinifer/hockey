@@ -190,7 +190,9 @@ roster_df <- tbl(fx.db_con(), 'roster') %>%
 # Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
 # Updates database with latest data from Moneypuck
+con <- fx.db_con()
 map(current_season, fx.scrape_moneypuck)
+dbDisconnect(con)
 # Latest data from NaturalStatTrick
 map(current_season, fx.scrape_nst)
 
