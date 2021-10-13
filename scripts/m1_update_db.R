@@ -69,7 +69,7 @@ get_nhl_schedule <- function(x){
   #   write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
   
   # Connect to DB
-  con <- initR::fx.db_con()
+  con <- initR::fx.db_con(x.host = 'localhost')
   
   map("schedule", function(x){
     DBI::dbSendQuery(con,
@@ -90,7 +90,7 @@ get_nhl_schedule <- function(x){
 }
 
 # Get season data
-annual_nhl_query <- function(x) {
+annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
   
   # print("Get schedule")
   schedule_df <- get_nhl_schedule(x) %>% 
@@ -109,7 +109,7 @@ annual_nhl_query <- function(x) {
   # data_base_column_types <- readRDS('')
   # print(season)
   # print("Getting IDs and dates")
-  existing_ids <- tbl(fx.db_con(), 'game_info') %>% 
+  existing_ids <- tbl(con, 'game_info') %>% 
     filter(season == season_full) %>% 
     pull(game_id)
   
@@ -145,6 +145,8 @@ annual_nhl_query <- function(x) {
     2008020573,
     2008020574,
     2008020575,
+    2021010010,
+    2021010016,
     NULL)
   
   season_start <- schedule_df %>% 
@@ -189,25 +191,7 @@ annual_nhl_query <- function(x) {
                           if (scrape_ids %>% length() >= 1) {
                             
                             print(glue('Setting up db connection'))
-                            hockey_db <- DBI::dbConnect(
-                              RPostgres::Postgres(),
-                              host = ifelse(
-                                jsonlite::fromJSON(
-                                  readLines("http://api.hostip.info/get_json.php",
-                                            warn = F)
-                                )$ip == Sys.getenv('ip'),
-                                Sys.getenv('local'),
-                                Sys.getenv('ip')
-                              ),
-                              port = Sys.getenv('postgres_port'),
-                              user = Sys.getenv('db_user'),
-                              password = Sys.getenv('db_password'),
-                              dbname = proj_name,
-                              # database = "football",
-                              # Server = "localhost\\SQLEXPRESS",
-                              # Database = "datawarehouse",
-                              NULL
-                            )
+                            con <- fx.db_con(x.host = 'localhost')
                             
                             # game_info_df
                             print(glue('Rbinding game_info'))
@@ -226,11 +210,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- game_info %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting game_info duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from game_info WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from game_info WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading game_info scrape'))
                             map("game_info", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 game_info,
                                                 append = TRUE,
@@ -253,11 +237,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- pbp_base %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting pbp_base duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_base WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from pbp_base WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading pbp_base scrape'))
                             map("pbp_base", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 pbp_base,
                                                 append = TRUE,
@@ -280,11 +264,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- pbp_extras %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting pbp_extras duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from pbp_extras WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from pbp_extras WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading pbp_extras scrape'))
                             map("pbp_extras", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 pbp_extras,
                                                 append = TRUE,
@@ -307,11 +291,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- player_shifts %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting player_shifts duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_shifts WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from player_shifts WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading player_shifts scrape'))
                             map("player_shifts", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 player_shifts,
                                                 append = TRUE,
@@ -334,11 +318,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- player_periods %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting player_periods duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from player_periods WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from player_periods WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading player_periods scrape'))
                             map("player_periods", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 player_periods,
                                                 append = TRUE,
@@ -361,11 +345,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- roster %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting roster duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from roster WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from roster WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading roster scrape'))
                             map("roster", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 roster,
                                                 append = TRUE,
@@ -388,11 +372,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- scratches %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting scratches duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from scratches WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from scratches WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading scratches scrape'))
                             map("scratches", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 scratches,
                                                 append = TRUE,
@@ -415,11 +399,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- events_summary %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting events_summary duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from events_summary WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from events_summary WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading events_summary scrape'))
                             map("events_summary", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 events_summary,
                                                 append = TRUE,
@@ -442,11 +426,11 @@ annual_nhl_query <- function(x) {
                             game_ids <- report %>% pull(game_id) %>% toString()
                             # game_info_df database
                             print(glue('Deleting report duplicates'))
-                            DBI::dbSendQuery(hockey_db, glue('DELETE from report WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
+                            DBI::dbSendQuery(con, glue('DELETE from report WHERE game_id IN ({paste0(game_ids, collapse = ',')});'))
                             
                             print(glue('Uploading report scrape'))
                             map("report", function(x) {
-                              RPostgres::dbWriteTable(hockey_db,
+                              RPostgres::dbWriteTable(con,
                                                 x,
                                                 report,
                                                 append = TRUE,
@@ -456,7 +440,7 @@ annual_nhl_query <- function(x) {
                             # return(pbp_payload$result)
                             
                             print(glue('Disconnecting from db'))
-                            DBI::dbDisconnect(hockey_db)
+                            DBI::dbDisconnect(con)
                           }
                         })
   
@@ -527,7 +511,7 @@ delete_and_upload <- function(scrape, season,
   
   pg <- dbDriver(db_driver)
   
-  hockey_db <- dbConnect(
+  con <- dbConnect(
     pg,
     dbname = dbname,
     user = user,
@@ -539,20 +523,20 @@ delete_and_upload <- function(scrape, season,
   query <- glue('DELETE from {.x} where season = {season}')
   
   map(.x = db_tables, ~ {
-    DBI::dbGetQuery(hockey_db, glue('DELETE from {.x} where season = {season}'))
+    DBI::dbGetQuery(con, glue('DELETE from {.x} where season = {season}'))
   })
   
   map(.x = db_tables,
       DBI::dbWriteTable(
-        hockey_db,
+        con,
         proj_name,
         .x,
         append = TRUE,
         row.names = FALSE
       ))
   
-  DBI::dbDisconnect(hockey_db)
-  rm(hockey_db)
+  DBI::dbDisconnect(con)
+  rm(con)
 }
 # map(2020, annual_nhl_query)
 
@@ -560,7 +544,7 @@ delete_and_upload <- function(scrape, season,
 #   group_by(season) %>%
 #   count() %>%
 #   collect()
-fx.delete_db_index <- function(hockey_db) {
+fx.delete_db_index <- function(con) {
   queries <- c(
     'DROP INDEX game_info_games;',
     'DROP INDEX pbp_base_games;',
@@ -575,11 +559,11 @@ fx.delete_db_index <- function(hockey_db) {
   
   map(queries, function(x){
     print(queries)
-    dbSendQuery(hockey_db, queries)
+    dbSendQuery(con, queries)
   })
 }
 
-fx.create_db_index <- function(hockey_db) {
+fx.create_db_index <- function(con) {
   queries <- c(
     'CREATE INDEX game_info_games ON game_info (game_id);',
     'CREATE INDEX pbp_base_games ON pbp_base (game_id);',
@@ -594,6 +578,6 @@ fx.create_db_index <- function(hockey_db) {
   
   map(queries, function(x){
     print(queries)
-    dbSendQuery(hockey_db, queries)
+    dbSendQuery(con, queries)
   })
 }

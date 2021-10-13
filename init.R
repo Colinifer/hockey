@@ -83,7 +83,7 @@ fx.setdir(proj_name)
 
 # Create standard objects -------------------------------------------------
 
-con <- initR::fx.db_con() # connect to DB using personal initR functions
+con <- initR::fx.db_con(x.host = 'localhost') # connect to DB using personal initR functions
 dbListTables(con)
 map(.x=dbListTables(con), ~tbl(con, .x))
 dbDisconnect(con)
@@ -91,7 +91,7 @@ dbDisconnect(con)
 '%notin%' <- Negate('%in%') # opposite of %in%
 options(tibble.print_min=10) # expand default tibble preview
 
-current_season <- 2020
+current_season <- 2021
 current_full_season <- glue('{current_season}{current_season+1}')
 year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
@@ -131,7 +131,8 @@ active_players <- nhlapi::nhl_teams_rosters() %>%
   janitor::clean_names()
 
 # Load roster db and join with latest roster scrape
-roster_df <- tbl(fx.db_con(), 'roster') %>% 
+con <- fx.db_con(x.host = 'localhost')
+roster_df <- tbl(con, 'roster') %>% 
   filter(season == current_full_season) %>% 
   select(-game_id,
          -game_date,
@@ -184,18 +185,18 @@ roster_df <- tbl(fx.db_con(), 'roster') %>%
     action_shot_url = glue('https://cms.nhl.bamgrid.com/images/actionshots/{player_id}.jpg')
   )
 
+dbDisconnect(con)
 
 # Update database ---------------------------------------------------------
 
 # Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
 # Updates database with latest data from Moneypuck
-con <- fx.db_con()
 map(current_season, fx.scrape_moneypuck)
-dbDisconnect(con)
 # Latest data from NaturalStatTrick
+con <- fx.db_con(x.host = 'localhost')
 map(current_season, fx.scrape_nst)
-
+dbDisconnect(con)
 
 
 # Sample links:
