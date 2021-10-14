@@ -52,6 +52,7 @@ pkgs <- c(
   'Matrix',
   'nhlapi',
   'sportyR',
+  'hockeyR',
   'nhlplot',
   'initR'
 )

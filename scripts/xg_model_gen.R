@@ -3,9 +3,9 @@ library(xgboost)
 # X = 100max -100min
 # Y = 42max -42min
 
-con <- fx.db_con()
+con <- fx.db_con(x.host = 'localhost')
 pbp <- tbl(con, 'pbp_base') %>% 
-  filter(season %in% c('20202021')) %>% 
+  filter(season %in% c('20212022')) %>% 
   collect()
 dbDisconnect(con)
 
