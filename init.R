@@ -195,9 +195,7 @@ map(current_season, annual_nhl_query)
 # Updates database with latest data from Moneypuck
 map(current_season, fx.scrape_moneypuck)
 # Latest data from NaturalStatTrick
-con <- fx.db_con(x.host = 'localhost')
 map(current_season, fx.scrape_nst)
-dbDisconnect(con)
 
 
 # Sample links:

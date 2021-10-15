@@ -7,7 +7,7 @@ csv_to_rds <- function(x){
 
 
 # Scrape Moneypuck
-fx.scrape_moneypuck <- function(x) {
+fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
@@ -121,6 +121,7 @@ fx.scrape_moneypuck <- function(x) {
       RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
     # dbDisconnect(con)
     
+    dbDisconnect(con)
     gc()
   })
   
@@ -133,7 +134,7 @@ fx.scrape_moneypuck <- function(x) {
 
 
 # Scrape Natural Stat Trick
-fx.scrape_nst <- function(x) {
+fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
@@ -145,7 +146,7 @@ fx.scrape_nst <- function(x) {
   
   # Game/PBP data
   print('Scraping NST games')
-  con <- fx.db_con()
+  # con <- fx.db_con(x.host = 'localhost')
   existing_ids <- tbl(con, 'nst') %>% 
     filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
@@ -159,7 +160,7 @@ fx.scrape_nst <- function(x) {
   
   map(scrape_ids, function(x.gameid) {
     # x.gameid <- 2020020543
-    con <- initR::fx.db_con()
+    # con <- initR::fx.db_con()
     print(x.gameid)
     nst_season_id <- glue('{x.gameid %>% substr(1,4) %>% as.integer()}{x.gameid %>% substr(1,4) %>% as.integer()+1}')
     nst_game_id <- substr(x.gameid,5,10) %>% as.integer()
@@ -315,7 +316,7 @@ fx.scrape_nst <- function(x) {
     #   ) %>% 
     #   write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
     
-    con <- fx.db_con()
+    con <- fx.db_con(x.host = 'localhost')
     nst_scrape %>% 
       RPostgres::dbWriteTable(con, 'nst', ., append = TRUE, row.names = FALSE)
     dbDisconnect(con)
