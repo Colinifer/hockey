@@ -190,6 +190,13 @@ dbDisconnect(con)
 
 # Update database ---------------------------------------------------------
 
+con <- fx.db_con(x.host = 'localhost')
+pbp_df <- hockeyR::scrape_season(2011)
+dbWriteTable(con, 'hockeyR_pbp', value = pbp_df)
+
+pbp_df <- hockeyR::scrape_season(2011)
+dbAppendTable(con, 'hockeyR_pbp', value = pbp_df)
+
 # Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
 # Updates database with latest data from Moneypuck
