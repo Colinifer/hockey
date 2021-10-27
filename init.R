@@ -13,6 +13,7 @@ proj_name <- 'hockey'
 pkgs <- c(
   'devtools',
   'tidyverse',
+  'lubridate',
   'RPostgres',
   'RPostgreSQL',
   # 'RMariaDB', # deprecated, new environment is running PostgreSQL
@@ -194,8 +195,9 @@ con <- fx.db_con(x.host = 'localhost')
 pbp_df <- hockeyR::scrape_season(2012)
 dbWriteTable(con, 'hockeyR_pbp', value = pbp_df)
 
-pbp_df <- hockeyR::scrape_season(2012)
-dbAppendTable(con, 'hockeyR_pbp', value = pbp_df)
+pbp_df <- hockeyR::scrape_season(2020) %>% 
+  mutate(game_length = game_length %>% lubridate::as.difftime())
+dbAppendTable(con, 'hockeyR_pbp', value = pbp_df) 
 
 # Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
