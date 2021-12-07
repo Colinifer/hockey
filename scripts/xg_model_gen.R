@@ -11,12 +11,18 @@ dbDisconnect(con)
 
 # Prep pbp mutations for xG model
 pbp_mutate <- pbp %>% 
+  # filter(game_id == 2021010004) %>% 
   group_by(game_id) %>% 
   arrange(season, game_id, event_index) %>% 
   mutate(
-    prev_event = dplyr::lag(event_type),
-    seconds_since_last_event = game_seconds - dplyr::lag(game_seconds),
-    is_corsi_event = ifelse(event_type %in% st.corsi_events == TRUE, TRUE, FALSE)
+    prev_event = dplyr::lag(event_type)
+    ,seconds_since_last_event = ifelse(
+      row_number() == 1 & 
+        game_period < 5
+      ,0
+      ,game_seconds - dplyr::lag(game_seconds, default = first(game_seconds))
+      )
+    ,is_corsi_event = ifelse(event_type %in% st.corsi_events == TRUE, TRUE, FALSE)
     ) %>% 
   arrange(season, game_id, is_corsi_event, event_index) %>% 
   group_by(game_id, is_corsi_event) %>% 
