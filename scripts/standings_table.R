@@ -1,5 +1,5 @@
-current_season <- 2020
-map(2010:2020, function(x){
+current_season <- 2021
+map(2020:2021, function(x){
 # standings <-
 standings <- nhlapi::nhl_standings(seasons = x) %>%
   # select(teamRecords) %>%
