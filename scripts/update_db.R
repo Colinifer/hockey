@@ -17,6 +17,74 @@ db_tables <- c(
   NULL
 )
 
+# HockeyR PBP
+map(2021:2021, function(x){
+  print(glue('Scraping {x}{x+1} season'))
+  payload <- readRDS(url(glue('https://github.com/danmorse314/hockeyR-data/blob/main/data/play_by_play_{x}_{substr(x+1, 3, 4)}.rds?raw=true'))) %>% 
+    flatten() %>% 
+    mutate(
+      game_length = game_length %>% time_length(unit = 'seconds')
+    )
+  
+  payload %>% 
+    select(
+      game_id,
+      game_length
+    )
+  
+  print(glue('Deleting {x}{x+1} from existing db'))
+  con <- initR::fx.db_con(x.host = 'localhost')
+  
+  delete_query <- glue('DELETE FROM \"hockeyR_pbp\" WHERE season = \'{x}{x+1}\';')
+  
+  DBI::dbExecute(con, delete_query)
+  
+  print(glue('Writing to hockeyR_pbp table'))
+  DBI::dbWriteTable(con,
+                    'hockeyR_pbp',
+                    payload,
+                    append = TRUE,
+                    row.names = FALSE)
+  
+  DBI::dbDisconnect(con)
+  
+})
+
+fx.update_pbp <- function(x.season = current_season){
+  
+  con <- initR::fx.db_con(x.host = 'localhost')
+  x.full_season <- glue('{x.season}{x.season+1}')
+  
+  delete_query <- glue('DELETE FROM \"hockeyR_pbp\" WHERE season = \'{x}{x+1}\' & game_id = ;')
+  
+  DBI::dbExecute(con, delete_query)
+  
+  existing_game_ids <- tbl(con, 'hockeyR_pbp') %>% 
+    filter(season == as.character(x.full_season)) %>%
+    select(game_id) %>% 
+    collect() %>% 
+    unique() %>% 
+    pull(game_id)
+  
+  schedule_df <- get_nhl_schedule(x.season) %>% 
+    mutate(game_id = game_id %>% as.integer()) %>% 
+    filter(session != 'PR') %>% 
+    invisible()
+  
+  remaining_games <- schedule_df %>% 
+    filter(!(game_id %in% existing_game_ids)) %>% 
+    pull(game_id)
+  
+  print(glue('Writing to hockeyR_pbp table'))
+  DBI::dbWriteTable(con,
+                    'hockeyR_pbp',
+                    payload,
+                    append = TRUE,
+                    row.names = FALSE)
+  
+  DBI::dbDisconnect(con)
+}
+
 # Refresh and save NHL schedule
 get_nhl_schedule <- function(x){
 
@@ -65,12 +133,11 @@ get_nhl_schedule <- function(x){
 
   # Save scrape
   # Write local parquet
-  payload %>% 
-    write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
+  # payload %>% 
+  #   write_parquet(glue('data/schedule/{season_full}/schedule_{season_full}.parquet'))
   
   # Connect to DB
-  con <- initR::fx.db_con()
-  
+  con <- initR::fx.db_con(x.host = 'localhost')
   map("schedule", function(x){
     DBI::dbSendQuery(con,
                     glue('DELETE from {x} where season = {season_full}'))
