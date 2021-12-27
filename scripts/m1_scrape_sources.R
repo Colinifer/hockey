@@ -1,4 +1,4 @@
-# CSV to RDS
+# CSV to RDS --------------------------------------------------------------
 csv_to_rds <- function(x){
   x %>% 
     read_csv() %>% 
@@ -6,7 +6,7 @@ csv_to_rds <- function(x){
 }
 
 
-# Scrape Moneypuck
+# Scrape Moneypuck --------------------------------------------------------
 fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
@@ -37,13 +37,15 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
              game_status == 'Final') %>% 
     pull(game_id)
   
+
+  # Scrape Moneypuck Games ------------------------------------------------
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x
     mp_season_id <- glue('{x.year}{x.year+1}')
     
     mp_base <- 'http://moneypuck.com/moneypuck/gameData'
-    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
+    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
       janitor::clean_names() %>% 
       # mutate(game_id = gsub("^.*\\.","", x))
       mutate(season = mp_season_id,
@@ -89,13 +91,14 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
              game_status == 'Final') %>% 
     pull(game_id)
   
+  # Scrape Moneypuck Players ----------------------------------------------
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x
     mp_season_id <- glue('{x.year}{x.year+1}')
     
     mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
-    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv'))) %>% 
+    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
       janitor::clean_names() %>%
       mutate(game_id = x.gameid,
              season = mp_season_id
@@ -121,10 +124,10 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
       RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
     # dbDisconnect(con)
     
-    dbDisconnect(con)
     gc()
   })
   
+  dbDisconnect(con)
   # runif(1, 
   #       min=1, 
   #       max=1.5
@@ -133,7 +136,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
 }
 
 
-# Scrape Natural Stat Trick
+# Scrape Natural Stat Trick -----------------------------------------------
 fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
@@ -146,18 +149,35 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   # Game/PBP data
   print('Scraping NST games')
-  # con <- fx.db_con(x.host = 'localhost')
+  
   existing_ids <- tbl(con, 'nst') %>% 
     filter(season == season_full %>% as.character()) %>% 
     pull(game_id) %>% 
     unique()
-  dbDisconnect(con)
+  
+  bad_ids <- c(
+    2021010010,
+    2021010016,
+    2021010036,
+    2021010046,
+    2021010053,
+    2021010055,
+    2021010056,
+    2021010070,
+    2021010071,
+    2021010099,
+    2021010104,
+    2021020091,
+    NULL
+  )
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% existing_ids) & 
+             !(game_id %in% bad_ids) &
              game_status == 'Final') %>% 
     pull(game_id)
   
+  # Scrape NST Games ------------------------------------------------------
   map(scrape_ids, function(x.gameid) {
     # x.gameid <- 2020020543
     # con <- initR::fx.db_con()
@@ -169,7 +189,8 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
     
     # Get NST game page
     print(glue('Downloading {x.gameid} from NST'))
-    nst_page <- read_html(glue('{nst_base}{nst_url}'))
+    nst_page <- rvest::read_html(glue('{nst_base}{nst_url}'))
+    
     
     x.nst_away_team <- tbl(con, 'schedule') %>%
       filter(game_id == x.gameid) %>% 
@@ -180,6 +201,7 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
                                        away_team == 'L.A' ~ 'LA',
                                        TRUE ~ away_team)) %>%
       pull(nst_away_team)
+    
     
     x.nst_home_team <- schedule_df %>%
       filter(game_id == x.gameid) %>%
@@ -227,8 +249,8 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
       function(x) {
         # print(glue('{x}'))
         nst_scrape <- nst_page %>% 
-          html_element(x) %>% 
-          html_table(fill = NA, header = T) %>% 
+          rvest::html_element(x) %>% 
+          rvest::html_table(fill = NA, header = T) %>% 
           janitor::clean_names() %>%
           as_tibble() %>% 
           mutate(
@@ -301,10 +323,16 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
       # select(player) %>%
       identity()
     
+    nst_filepath <- glue('data/nst_games/{nst_season_id}')
+    
+    if (dir.exists(nst_filepath) == FALSE){
+      dir.create(nst_filepath)
+    }
+    
     # Save game tables to RDS
     # print(glue('Saving {x.gameid} to RDS'))
     nst_scrape %>% 
-      saveRDS(glue('data/nst_games/{nst_season_id}/{x.gameid}.rds'))
+      saveRDS(glue('{nst_filepath}/{x.gameid}.rds'))
     
     # print(glue('Saving {x.gameid} to parquet'))
     # nst_scrape %>% 
@@ -316,11 +344,11 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
     #   ) %>% 
     #   write_parquet(glue('data/nst/{nst_season_id}/nst_{nst_season_id}.parquet'))
     
-    con <- fx.db_con(x.host = 'localhost')
+    
     nst_scrape %>% 
       RPostgres::dbWriteTable(con, 'nst', ., append = TRUE, row.names = FALSE)
-    dbDisconnect(con)
     
+    Sys.sleep(runif(1, 3, 4))
     # Stall scrape timer
     # sleep_time <- runif(1, min=1, max=1.5)
     # print(glue('Sleeping {sleep_time}s before next request'))
@@ -329,6 +357,7 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
     #   Sys.sleep()
   })
  #
+  dbDisconnect(con)
 }
 
 

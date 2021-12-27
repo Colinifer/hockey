@@ -213,7 +213,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/game_info/{season_full}/game_info_{season_full}.parquet'))
-                            print(glue('Saved game_info parquet...'))
+                            # print(glue('Saved game_info parquet...'))
                             game_info <- pbp_payload$result$game_info_df
                             game_info %>% pull(game_id)
                             game_ids <- game_info %>% pull(game_id) %>% toString()
@@ -240,7 +240,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/pbp_base/{season_full}/pbp_base_{season_full}.parquet'))
-                            print(glue('Saved pbp_base parquet...'))
+                            # print(glue('Saved pbp_base parquet...'))
                             pbp_base <- pbp_payload$result$pbp_base
                             pbp_base %>% pull(game_id)
                             game_ids <- pbp_base %>% pull(game_id) %>% toString()
@@ -267,7 +267,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/pbp_extras/{season_full}/pbp_extras_{season_full}.parquet'))
-                            print(glue('Saved pbp_extras parquet...'))
+                            # print(glue('Saved pbp_extras parquet...'))
                             pbp_extras <- pbp_payload$result$pbp_extras
                             pbp_extras %>% pull(game_id)
                             game_ids <- pbp_extras %>% pull(game_id) %>% toString()
@@ -294,7 +294,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/player_shifts/{season_full}/player_shifts_{season_full}.parquet'))
-                            print(glue('Saved player_shifts parquet...'))
+                            # print(glue('Saved player_shifts parquet...'))
                             player_shifts <- pbp_payload$result$player_shifts
                             player_shifts %>% pull(game_id)
                             game_ids <- player_shifts %>% pull(game_id) %>% toString()
@@ -321,7 +321,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/player_periods/{season_full}/player_periods_{season_full}.parquet'))
-                            print(glue('Saved player_periods parquet...'))
+                            # print(glue('Saved player_periods parquet...'))
                             player_periods <- pbp_payload$result$player_periods
                             player_periods %>% pull(game_id)
                             game_ids <- player_periods %>% pull(game_id) %>% toString()
@@ -348,7 +348,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/roster/{season_full}/roster_{season_full}.parquet'))
-                            print(glue('Saved roster parquet...'))
+                            # print(glue('Saved roster parquet...'))
                             roster <- pbp_payload$result$roster_df
                             roster %>% pull(game_id)
                             game_ids <- roster %>% pull(game_id) %>% toString()
@@ -375,7 +375,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/scratches/{season_full}/scratches_{season_full}.parquet'))
-                            print(glue('Saved scratches parquet...'))
+                            # print(glue('Saved scratches parquet...'))
                             scratches <- pbp_payload$result$scratches_df
                             scratches %>% pull(game_id)
                             game_ids <- scratches %>% pull(game_id) %>% toString()
@@ -402,7 +402,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/events_summary/{season_full}/events_summary_{season_full}.parquet'))
-                            print(glue('Saved events_summary parquet...'))
+                            # print(glue('Saved events_summary parquet...'))
                             events_summary <- pbp_payload$result$events_summary_df
                             events_summary %>% pull(game_id)
                             game_ids <- events_summary %>% pull(game_id) %>% toString()
@@ -429,7 +429,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                             #     collect()
                             # ) %>% 
                             #   write_parquet(glue('data/report/{season_full}/report_{season_full}.parquet'))
-                            print(glue('Saved report parquet...'))
+                            # print(glue('Saved report parquet...'))
                             report <- pbp_payload$result$report
                             report %>% pull(game_id)
                             game_ids <- report %>% pull(game_id) %>% toString()

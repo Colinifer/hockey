@@ -9,75 +9,87 @@ proj_name <- 'hockey'
 # devtools::install_github('Colinifer/initR', auth_token = Sys.getenv('authtoken'))
 # devtools::install_github('bbc/bbplot')
 # devtools::install_github('war-on-ice/nhlplot')
+# devtools::install_github('danmorse314/hockeyR')
 
 pkgs <- c(
+  # Core packages
   'devtools',
   'tidyverse',
-  'lubridate',
-  'RPostgres',
-  'RPostgreSQL',
-  # 'RMariaDB', # deprecated, new environment is running PostgreSQL
-  'DBI',
-  'readr',
-  'pander',
-  'na.tools',
-  'devtools',
-  'teamcolors',
   'glue',
-  'dplyr',
-  'rvest',
-  'arrow',
-  'RCurl',
-  'tictoc',
-  'animation',
-  'gt',
-  'DT',
-  'ggimage',
-  'ggpubr',
-  'ggthemes',
-  'bbplot',
-  'ggtext',
-  'ggforce',
-  'ggridges',
-  'ggrepel',
-  'hexbin',
-  'ggbeeswarm',
-  'extrafont',
-  'RCurl',
-  'xml2',
-  'rvest',
-  'jsonlite',
-  'foreach',
   'lubridate',
-  'snakecase',
-  'Matrix',
+  'rvest',
+  'initR',
+  
+  # Hockey packages
   'nhlapi',
+  'teamcolors',
   'sportyR',
   'hockeyR',
   'nhlplot',
-  'initR'
+  
+  # DB Packages
+  'odbc',
+  'RPostgres',
+  
+  # Web packages
+  'RCurl',
+  
+  # Stats packages
+  'pracma',
+  'DescTools',
+  'zoo',
+  'Matrix',
+  
+  # Table packages
+  'gt',
+  'reactable',
+  'png',
+  'DT',
+  
+  # ggplot packages
+  'ggthemes',
+  'ggimage',
+  'ggforce',
+  'ggridges',
+  'ggrepel',
+  'ggpmisc',
+  'ggbeeswarm',
+  'cowplot',
+  'webshot',
+  'gridExtra',
+  'grid',
+  'animation',
+  'viridis',
+  'ggpubr',
+  'bbplot',
+  'ggtext',
+  'hexbin',
+  
+  # Font packages
+  'extrafont',
+  'shadowtext',
+  
+  # Misc. packages
+  'furrr',
+  'tidytext',
+  'na.tools',
+  'tictoc',
+  'shiny',
+  'qs',
+  
+  # Unnecessary packages
+  'pander',
+  'distill',
+  'arrow', # incompatible w/ Apple ARM
+  'foreach',
+  
+  NULL
 )
-installed_packages <- pkgs %in%
-  rownames(installed.packages())
-if (any(installed_packages == FALSE)) {
-  install.packages(pkgs[!installed_packages])
-}
-if (any(c('bbplot', 'initR') %in%
-        rownames(installed.packages()) == FALSE)) {
-  library(devtools)
-  devtools::install_github('bbc/bbplot')
-  devtools::install_github('Colinifer/initR', auth_token = Sys.getenv('authtoken'))
-}
-# Load all installed packages, install and load any uninstalled packages
-invisible(lapply(pkgs, function(x) {
-  suppressMessages(suppressWarnings(library(
-    x,
-    warn.conflicts = FALSE,
-    quietly = TRUE,
-    character.only = TRUE
-  )))
-}))
-rm(pkgs, installed_packages)
+
+initR::fx.load_packages(pkgs)
+
+options(tibble.print_min=25)
+`%notin%` <- Negate(`%in%`)
 
 # Initialize working directory --------------------------------------------
 
@@ -89,9 +101,6 @@ con <- initR::fx.db_con(x.host = 'localhost') # connect to DB using personal ini
 dbListTables(con)
 map(.x=dbListTables(con), ~tbl(con, .x))
 dbDisconnect(con)
-
-'%notin%' <- Negate('%in%') # opposite of %in%
-options(tibble.print_min=10) # expand default tibble preview
 
 current_season <- 2021
 current_full_season <- glue('{current_season}{current_season+1}')
@@ -118,13 +127,19 @@ today <- format(Sys.Date(), '%Y-%d-%m')
 # nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
 # Source other files with various functions and ggproto objects
-source('plots/assets/plot_theme.R', echo = F)
-source('scripts/EH_scrape_functions.R', echo = F)
-source('scripts/m1_update_db.R', echo = F)
-source('scripts/m1_scrape_sources.R', echo = F)
-# source('scripts/all_functions.R')
-# source('scripts/all_stats.R')
-# source('scripts/misc_functions.R')
+source_files <- c(
+  'plots/assets/plot_theme.R',
+  'scripts/EH_scrape_functions.R',
+  'scripts/m1_update_db.R',
+  'scripts/m1_scrape_sources.R',
+  # 'scripts/all_functions.R',
+  # 'scripts/all_stats.R',
+  # 'scripts/misc_functions.R',
+  NULL
+)
+
+map(.x = source_files, ~source(.x, echo = F)) %>% 
+  invisible()
 
 # Get latest rosters
 active_players <- nhlapi::nhl_teams_rosters() %>% 
@@ -190,14 +205,6 @@ roster_df <- tbl(con, 'roster') %>%
 dbDisconnect(con)
 
 # Update database ---------------------------------------------------------
-
-con <- fx.db_con(x.host = 'localhost')
-pbp_df <- hockeyR::scrape_season(2012)
-dbWriteTable(con, 'hockeyR_pbp', value = pbp_df)
-
-pbp_df <- hockeyR::scrape_season(2020) %>% 
-  mutate(game_length = game_length %>% lubridate::as.difftime())
-dbAppendTable(con, 'hockeyR_pbp', value = pbp_df) 
 
 # Updates databse with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
