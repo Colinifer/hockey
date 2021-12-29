@@ -86,7 +86,8 @@ pkgs <- c(
   NULL
 )
 
-initR::fx.load_packages(pkgs)
+initR::fx.load_packages(pkgs) |> 
+  suppressMessages()
 
 options(tibble.print_min=25)
 `%notin%` <- Negate(`%in%`)
@@ -108,23 +109,6 @@ year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
 
 today <- format(Sys.Date(), '%Y-%d-%m')
-
-# f.scrape <- paste0('data/', list.files(path = 'data/', pattern = 'pbp_scrape'))
-
-# Open backup parquet files for fast offline viewing
-# schedule_ds <- open_dataset('data/schedule/', partitioning = 'year')
-# game_info_ds <- open_dataset('data/game_info/', partitioning = 'year')
-# pbp_base_ds <- open_dataset('data/pbp_base/', partitioning = 'year')
-# pbp_extras_ds <- open_dataset('data/pbp_extras', partitioning = 'year')
-# player_shifts_ds <- open_dataset('data/player_shifts', partitioning = 'year')
-# player_periods_ds <- open_dataset('data/player_periods', partitioning = 'year')
-# roster_ds <- open_dataset('data/roster/', partitioning = 'year')
-# scratches_ds <- open_dataset('data/scratches/', partitioning = 'year')
-# events_summary_ds <- open_dataset('data/events_summary/', partitioning = 'year')
-# report_ds <- open_dataset('data/report/', partitioning = 'year')
-# mp_games_ds <- open_dataset('data/moneypuck/games/', partitioning = 'year')
-# mp_players_ds <- open_dataset('data/moneypuck/players/', partitioning = 'year')
-# nst_ds <- open_dataset('data/nst/', partitioning = 'year')
 
 # Source other files with various functions and ggproto objects
 source_files <- c(
@@ -202,12 +186,18 @@ roster_df <- tbl(con, 'roster') %>%
     action_shot_url = glue('https://cms.nhl.bamgrid.com/images/actionshots/{player_id}.jpg')
   )
 
+
+pbp_df <- tbl(con, 'hockeyR_pbp') |> 
+  filter(season == current_full_season) |> 
+  collect()
+
 dbDisconnect(con)
 
 # Update database ---------------------------------------------------------
 
-# Updates databse with latest games play-by-play from current seasons
+# Updates database with latest games play-by-play from current seasons
 map(current_season, annual_nhl_query)
+map(current_season, fx.hockeyr_update)
 # Updates database with latest data from Moneypuck
 map(current_season, fx.scrape_moneypuck)
 # Latest data from NaturalStatTrick

@@ -42,7 +42,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x
-    mp_season_id <- glue('{x.year}{x.year+1}')
+    mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
     
     mp_base <- 'http://moneypuck.com/moneypuck/gameData'
     mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
@@ -95,7 +95,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x
-    mp_season_id <- glue('{x.year}{x.year+1}')
+    mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
     
     mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
     mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
@@ -182,7 +182,7 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
     # x.gameid <- 2020020543
     # con <- initR::fx.db_con()
     print(x.gameid)
-    nst_season_id <- glue('{x.gameid %>% substr(1,4) %>% as.integer()}{x.gameid %>% substr(1,4) %>% as.integer()+1}')
+    nst_season_id <- glue('{x.gameid %>% substr(1,4) %>% as.integer()}{x.gameid %>% substr(1,4) %>% as.integer()+1}') %>% as.integer()
     nst_game_id <- substr(x.gameid,5,10) %>% as.integer()
     nst_base <- glue('https://naturalstattrick.com/')
     nst_url <- glue('game.php?season={nst_season_id}&game={nst_game_id}')
