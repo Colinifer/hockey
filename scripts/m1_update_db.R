@@ -99,7 +99,8 @@ fx.hockeyr_update <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
   
   # print("Get schedule")
   schedule_df <- get_nhl_schedule(x) %>% 
-    invisible()
+    invisible() |> 
+    suppressWarnings()
   
   if (x <= 2010) {
     schedule_df <- schedule_df %>% 
@@ -173,7 +174,7 @@ fx.hockeyr_update <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                                          pull(game_id) %>% 
                                          unique()
                                        
-                                       DBI::dbExecute(con, glue('DELETE from hockeyR_pbp WHERE game_id IN ({paste0(game_ids_delete_upload, collapse = ", ")});'))
+                                       DBI::dbExecute(con, glue('DELETE from "hockeyR_pbp" WHERE "game_id" IN ({paste0(toString(game_ids_delete_upload), collapse = ", ")});'))
                                        
                                        RPostgres::dbWriteTable(con,
                                                                'hockeyR_pbp',
@@ -185,6 +186,8 @@ fx.hockeyr_update <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
   )
   
   dbDisconnect(con)
+  
+  gc()
   # rm(schedule_df, season_full, existing_ids, scrape_ids, pbp_payload, game_ids_delete_upload)
 }
 
@@ -195,7 +198,8 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
   
   # print("Get schedule")
   schedule_df <- get_nhl_schedule(x) %>% 
-    invisible()
+    invisible() |> 
+    suppressWarnings()
   
   if (x <= 2008) {
     schedule_df <- schedule_df %>% 

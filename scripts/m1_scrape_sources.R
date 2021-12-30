@@ -12,7 +12,8 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   schedule_df <- get_nhl_schedule(x) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
     filter(session != 'PR') %>% 
-    invisible()
+    invisible() |> 
+    suppressWarnings()
     
   if (x == 2015) {
     schedule_df <- schedule_df %>% 
@@ -27,7 +28,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   print('Scraping mp games')
   # con <- fx.db_con()
   games_existing_ids <- tbl(con, 'moneypuck_games') %>% 
-    filter(season == season_full %>% as.character()) %>% 
+    filter(season == season_full) %>% 
     pull(game_id) %>% 
     unique()
   # dbDisconnect(con)
@@ -74,14 +75,13 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
       RPostgres::dbWriteTable(con, 'moneypuck_games', ., append = TRUE, row.names = FALSE)
     # dbDisconnect(con)
     
-    gc()
   })
   
   # Player data
   print('Scraping mp players')
   # con <- fx.db_con()
   players_existing_ids <- tbl(con, 'moneypuck_players') %>% 
-    filter(season == season_full %>% as.character()) %>% 
+    filter(season == season_full) %>% 
     pull(game_id) %>% 
     unique()
   # dbDisconnect(con)
@@ -124,8 +124,9 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
       RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
     # dbDisconnect(con)
     
-    gc()
   })
+  
+  gc()
   
   dbDisconnect(con)
   # runif(1, 
@@ -141,7 +142,8 @@ fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   schedule_df <- get_nhl_schedule(x) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
-    invisible()
+    invisible() |> 
+    suppressWarnings()
   
   season_full <- schedule_df %>% 
     pull(season) %>% 
