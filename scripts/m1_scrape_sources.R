@@ -6,16 +6,169 @@ csv_to_rds <- function(x){
 }
 
 
-# Scrape Moneypuck --------------------------------------------------------
-fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
+# Game Shifts -------------------------------------------------------------
+fx.scrape_nhl_game_shifts <- function(x.scrape_game_ids) {
   
-  schedule_df <- get_nhl_schedule(x) %>% 
+  if (length(x.scrape_game_ids) < 1) {
+    warning(paste0('No Game ID passed to function'))
+  }
+  
+  cat(glue('\nScraping {length(x.scrape_game_ids)} games: {min(x.scrape_game_ids)}-{max(x.scrape_game_ids)}\n'))
+  
+  if (length(x.scrape_game_ids) == 1) {
+    timer <- Sys.time()
+    cat(glue('\n{x.scrape_game_ids}... '))
+    json_shifts <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={x.scrape_game_ids}')) |> 
+      jsonlite::fromJSON()
+    
+    json_shifts_df <- json_shifts |> 
+      nth(1) |> 
+      dplyr::as_tibble() |> 
+      janitor::clean_names()
+    
+    assign(x = 'shifts_df', value = json_shifts_df)
+    cat(glue('Complete\n'))
+    
+    cat(glue('\n{round(as.period(Sys.time() - timer), 2)}'))
+  }
+  
+  if (length(x.scrape_game_ids) > 1) {
+    timer <- Sys.time()
+    json_shifts_df <- map_df(.x = x.scrape_game_ids,
+           ~{
+             cat(glue('\n\n{.x}... '))
+             data <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={.x}')) |> 
+               jsonlite::fromJSON() |> 
+               nth(1) |> 
+               dplyr::as_tibble() |> 
+               janitor::clean_names()
+             
+             if (length(x.scrape_game_ids > 6)) {
+               Sys.sleep(4)
+             }
+             cat(glue('Complete\n'))
+           })
+    
+    assign(x = 'shifts_df', value = json_shifts_df)
+    
+    cat(glue('{\n}{round(as.period(Sys.time() - timer), 2)\n}'))
+  }
+  
+  cat('\nCleaning and adding mutations...\n')
+  data <- shifts_df |> 
+    mutate(
+      season = as.numeric(glue::glue('{substr(game_id,1,4)}{as.numeric(substr(game_id,1,4))+1}')),
+      # start_time = lubridate::ms(start_time),
+      # end_time = lubridate::ms(end_time),
+      start_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(start_time), unit = "sec")) + ((period-1)*1200),
+      end_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(end_time), unit = "sec")) + ((period-1)*1200),
+      duration = end_time_game_seconds - start_time_game_seconds
+    ) |> 
+    select(
+      season,
+      game_id,
+      event_number,
+      player_id,
+      first_name,
+      last_name,
+      shift_number,
+      period,
+      start_time,
+      end_time,
+      duration,
+      start_time_game_seconds,
+      end_time_game_seconds,
+      team_id,
+      team_abbrev,
+      team_name,
+      event_description,
+      event_details,
+      id,
+      type_code,
+      detail_code,
+    ) |> 
+    arrange(event_number, end_time_game_seconds)
+  
+  return(data)
+}
+
+fx.upload_nhl_game_shifts <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
+  
+  schedule_df <- get_nhl_schedule(x.season) %>% 
+    mutate(game_id = game_id %>% as.integer()) %>% 
+    filter(session != 'PR') %>% 
+    invisible() |> 
+    suppressWarnings()
+  
+  if (x.season == 2015) {
+    schedule_df <- schedule_df %>% 
+      filter(game_id >= 2015020624)
+  }
+  
+  season_full <- schedule_df %>% 
+    pull(season) %>% 
+    first()
+  
+  season_start <- schedule_df %>% 
+    head(1) %>% 
+    pull(game_date)
+  
+  season_end <- schedule_df %>% 
+    tail(1) %>% 
+    pull(game_date)
+  
+  dates <- seq.Date(season_start,
+                    season_end, by = '4 days')
+  
+  existing_ids <- tbl(con, 'game_shifts') %>% 
+    filter(season == season_full) %>% 
+    pull(game_id) |> 
+    unique()
+  
+  bad_ids <- c()
+  
+  date_grid <- tibble::tibble(start_date = dates, 
+                              end_date = dates + 3)
+  
+  # print("Got IDs and dates")
+  
+  print(date_grid)
+  
+  purrr::map(.x = seq_along(date_grid$start_date), 
+             ~{message(paste0('\nScraping week of ', date_grid$start_date[.x], '...\n'))
+               
+               scrape_ids <- schedule_df %>% 
+                 filter(game_date >= date_grid$start_date[.x] & 
+                          game_date <= date_grid$end_date[.x] & 
+                          !(game_id %in% existing_ids) & 
+                          !(game_id %in% bad_ids) &
+                          session == 'R' &
+                          game_status == 'Final') %>% 
+                 pull(game_id)
+               
+               shifts_payload <- fx.scrape_nhl_game_shifts(scrape_ids)
+               
+               game_ids_delete_upload <- shifts_payload %>% 
+                 pull(game_id) %>% 
+                 unique()
+               
+               DBI::dbExecute(con, glue('DELETE from game_shifts WHERE game_id IN ({paste0(toString(game_ids_delete_upload, collapse = ', '))});'))
+               
+               shifts_payload %>% 
+                 RPostgres::dbWriteTable(con, 'game_shifts', ., append = TRUE, row.names = FALSE)
+             })
+}
+
+# Scrape Moneypuck --------------------------------------------------------
+fx.scrape_moneypuck <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
+  
+  schedule_df <- get_nhl_schedule(x.season) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
     filter(session != 'PR') %>% 
     invisible() |> 
     suppressWarnings()
     
-  if (x == 2015) {
+  if (x.season == 2015) {
     schedule_df <- schedule_df %>% 
       filter(game_id >= 2015020624)
   }
@@ -26,12 +179,12 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   # Game/PBP data
   print('Scraping mp games')
-  # con <- fx.db_con()
+  
   games_existing_ids <- tbl(con, 'moneypuck_games') %>% 
     filter(season == season_full) %>% 
     pull(game_id) %>% 
     unique()
-  # dbDisconnect(con)
+  
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% games_existing_ids) & 
@@ -42,7 +195,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   # Scrape Moneypuck Games ------------------------------------------------
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
-    x.year <- x
+    x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
     
     mp_base <- 'http://moneypuck.com/moneypuck/gameData'
@@ -70,7 +223,6 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
     #   ) %>% 
     #   write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
     
-    # con <- fx.db_con()
     mp_csv %>% 
       RPostgres::dbWriteTable(con, 'moneypuck_games', ., append = TRUE, row.names = FALSE)
     # dbDisconnect(con)
@@ -79,12 +231,11 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   
   # Player data
   print('Scraping mp players')
-  # con <- fx.db_con()
+  
   players_existing_ids <- tbl(con, 'moneypuck_players') %>% 
     filter(season == season_full) %>% 
     pull(game_id) %>% 
     unique()
-  # dbDisconnect(con)
   
   scrape_ids <- schedule_df %>% 
     filter(!(game_id %in% players_existing_ids) & 
@@ -94,7 +245,7 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
   # Scrape Moneypuck Players ----------------------------------------------
   map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
-    x.year <- x
+    x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
     
     mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
@@ -119,10 +270,8 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
     #   ) %>% 
     #   write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
 
-    # con <- fx.db_con()
     mp_csv %>% 
       RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
-    # dbDisconnect(con)
     
   })
   
@@ -138,9 +287,9 @@ fx.scrape_moneypuck <- function(x, con = fx.db_con(x.host = 'localhost')) {
 
 
 # Scrape Natural Stat Trick -----------------------------------------------
-fx.scrape_nst <- function(x, con = fx.db_con(x.host = 'localhost')) {
+fx.scrape_nst <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
   
-  schedule_df <- get_nhl_schedule(x) %>% 
+  schedule_df <- get_nhl_schedule(x.season) %>% 
     mutate(game_id = game_id %>% as.integer()) %>% 
     invisible() |> 
     suppressWarnings()
