@@ -199,10 +199,8 @@ dbDisconnect(con)
 map(current_season, annual_nhl_query)
 map(current_season, fx.hockeyr_update)
 map(current_season, fx.upload_nhl_game_shifts) # work-in-progress
-# Updates database with latest data from Moneypuck
-map(current_season, fx.scrape_moneypuck)
-# Latest data from NaturalStatTrick
-map(current_season, fx.scrape_nst)
+map(current_season, fx.scrape_moneypuck) # Moneypuck
+map(current_season, fx.scrape_nst) # NatStatTrick
 
 
 # Sample links:

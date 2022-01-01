@@ -9,6 +9,47 @@ csv_to_rds <- function(x){
 # Game Shifts -------------------------------------------------------------
 fx.scrape_nhl_game_shifts <- function(x.scrape_game_ids) {
   
+  mutate_shifts <- function(x.shifts_df) {
+    
+    cat('\nCleaning and adding mutations...\n')
+    
+    df <- x.shifts_df |> 
+      mutate(
+        season = as.numeric(paste0(substr(game_id,1,4), as.numeric(substr(game_id,1,4))+1)),
+        # start_time = lubridate::ms(start_time),
+        # end_time = lubridate::ms(end_time),
+        start_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(start_time), unit = "sec")) + ((period-1)*1200),
+        end_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(end_time), unit = "sec")) + ((period-1)*1200),
+        duration = end_time_game_seconds - start_time_game_seconds
+      ) |> 
+      select(
+        season,
+        game_id,
+        event_number,
+        player_id,
+        first_name,
+        last_name,
+        shift_number,
+        period,
+        start_time,
+        end_time,
+        duration,
+        start_time_game_seconds,
+        end_time_game_seconds,
+        team_id,
+        team_abbrev,
+        team_name,
+        event_description,
+        event_details,
+        id,
+        type_code,
+        detail_code,
+      ) |> 
+      arrange(event_number, end_time_game_seconds)
+    
+    return(df)
+  }
+  
   if (length(x.scrape_game_ids) < 1) {
     warning(paste0('No Game ID passed to function'))
   }
@@ -17,27 +58,30 @@ fx.scrape_nhl_game_shifts <- function(x.scrape_game_ids) {
   
   if (length(x.scrape_game_ids) == 1) {
     timer <- Sys.time()
-    cat(glue('\n{x.scrape_game_ids}... '))
+    cat(glue('\n\n{x.scrape_game_ids}... '))
     json_shifts <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={x.scrape_game_ids}')) |> 
       jsonlite::fromJSON()
     
-    json_shifts_df <- json_shifts |> 
+    shifts_df <- json_shifts |> 
       nth(1) |> 
       dplyr::as_tibble() |> 
-      janitor::clean_names()
+      janitor::clean_names() |> 
+      mutate_shifts()
     
-    assign(x = 'shifts_df', value = json_shifts_df)
+    # assign(x = 'shifts_df', value = json_shifts_df)
     cat(glue('Complete\n'))
     
-    cat(glue('\n{round(as.period(Sys.time() - timer), 2)}'))
+    cat(glue('\n\nTotal time: {round(as.period(Sys.time() - timer), 2)\n}'))
+    
+    return(shifts_df)
   }
   
   if (length(x.scrape_game_ids) > 1) {
     timer <- Sys.time()
-    json_shifts_df <- map_df(.x = x.scrape_game_ids,
+    shifts_df <- map_df(.x = x.scrape_game_ids,
            ~{
              cat(glue('\n\n{.x}... '))
-             data <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={.x}')) |> 
+             shifts_df <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={.x}')) |> 
                jsonlite::fromJSON() |> 
                nth(1) |> 
                dplyr::as_tibble() |> 
@@ -47,49 +91,15 @@ fx.scrape_nhl_game_shifts <- function(x.scrape_game_ids) {
                Sys.sleep(4)
              }
              cat(glue('Complete\n'))
-           })
+             
+             return(shifts_df)
+           }) |> 
+      mutate_shifts()
     
-    assign(x = 'shifts_df', value = json_shifts_df)
+    cat(glue('\n\nTotal time: {round(as.period(Sys.time() - timer), 2)\n}'))
     
-    cat(glue('{\n}{round(as.period(Sys.time() - timer), 2)\n}'))
+    return(shifts_df)
   }
-  
-  cat('\nCleaning and adding mutations...\n')
-  data <- shifts_df |> 
-    mutate(
-      season = as.numeric(glue::glue('{substr(game_id,1,4)}{as.numeric(substr(game_id,1,4))+1}')),
-      # start_time = lubridate::ms(start_time),
-      # end_time = lubridate::ms(end_time),
-      start_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(start_time), unit = "sec")) + ((period-1)*1200),
-      end_time_game_seconds = as.numeric(lubridate::as.period(lubridate::ms(end_time), unit = "sec")) + ((period-1)*1200),
-      duration = end_time_game_seconds - start_time_game_seconds
-    ) |> 
-    select(
-      season,
-      game_id,
-      event_number,
-      player_id,
-      first_name,
-      last_name,
-      shift_number,
-      period,
-      start_time,
-      end_time,
-      duration,
-      start_time_game_seconds,
-      end_time_game_seconds,
-      team_id,
-      team_abbrev,
-      team_name,
-      event_description,
-      event_details,
-      id,
-      type_code,
-      detail_code,
-    ) |> 
-    arrange(event_number, end_time_game_seconds)
-  
-  return(data)
 }
 
 fx.upload_nhl_game_shifts <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
@@ -146,16 +156,18 @@ fx.upload_nhl_game_shifts <- function(x.season, con = fx.db_con(x.host = 'localh
                           game_status == 'Final') %>% 
                  pull(game_id)
                
-               shifts_payload <- fx.scrape_nhl_game_shifts(scrape_ids)
-               
-               game_ids_delete_upload <- shifts_payload %>% 
-                 pull(game_id) %>% 
-                 unique()
-               
-               DBI::dbExecute(con, glue('DELETE from game_shifts WHERE game_id IN ({paste0(toString(game_ids_delete_upload, collapse = ', '))});'))
-               
-               shifts_payload %>% 
-                 RPostgres::dbWriteTable(con, 'game_shifts', ., append = TRUE, row.names = FALSE)
+               if(length(scrape_ids) > 0) {
+                 shifts_payload <- fx.scrape_nhl_game_shifts(scrape_ids)
+                 
+                 game_ids_delete_upload <- shifts_payload %>% 
+                   pull(game_id) %>% 
+                   unique()
+                 
+                 DBI::dbExecute(con, glue('DELETE from game_shifts WHERE game_id IN ({paste0(toString(game_ids_delete_upload, collapse = ', '))});'))
+                 
+                 shifts_payload %>% 
+                   RPostgres::dbWriteTable(con, 'game_shifts', ., append = TRUE, row.names = FALSE)
+               }
              })
 }
 
