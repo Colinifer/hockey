@@ -314,7 +314,7 @@ fx.scrape_nst <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
   print('Scraping NST games')
   
   existing_ids <- tbl(con, 'nst') %>% 
-    filter(season == season_full %>% as.character()) %>% 
+    filter(season == season_full) %>% 
     pull(game_id) %>% 
     unique()
   
@@ -511,7 +511,7 @@ fx.scrape_nst <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
     nst_scrape %>% 
       RPostgres::dbWriteTable(con, 'nst', ., append = TRUE, row.names = FALSE)
     
-    Sys.sleep(runif(1, 3, 4))
+    Sys.sleep(runif(1, 8, 10))
     # Stall scrape timer
     # sleep_time <- runif(1, min=1, max=1.5)
     # print(glue('Sleeping {sleep_time}s before next request'))
