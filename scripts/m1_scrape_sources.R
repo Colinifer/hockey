@@ -78,8 +78,8 @@ fx.scrape_nhl_game_shifts <- function(x.scrape_game_ids) {
   
   if (length(x.scrape_game_ids) > 1) {
     timer <- Sys.time()
-    shifts_df <- map_df(.x = x.scrape_game_ids,
-           ~{
+    shifts_df <- map_df(x.scrape_game_ids,
+           function(.x){
              cat(glue('\n\n{.x}... '))
              shifts_df <- url(glue('https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={.x}')) |> 
                jsonlite::fromJSON() |> 
@@ -144,8 +144,8 @@ fx.upload_nhl_game_shifts <- function(x.season, con = fx.db_con(x.host = 'localh
   
   print(date_grid)
   
-  purrr::map(.x = seq_along(date_grid$start_date), 
-             ~{message(paste0('\nScraping week of ', date_grid$start_date[.x], '...\n'))
+  purrr::map(seq_along(date_grid$start_date), 
+             function(.x){message(paste0('\nScraping week of ', date_grid$start_date[.x], '...\n'))
                
                scrape_ids <- schedule_df %>% 
                  filter(game_date >= date_grid$start_date[.x] & 
@@ -205,7 +205,7 @@ fx.scrape_moneypuck <- function(x.season, con = fx.db_con(x.host = 'localhost'))
   
 
   # Scrape Moneypuck Games ------------------------------------------------
-  map(scrape_ids, function(x.gameid) {
+  purrr::map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
@@ -255,7 +255,7 @@ fx.scrape_moneypuck <- function(x.season, con = fx.db_con(x.host = 'localhost'))
     pull(game_id)
   
   # Scrape Moneypuck Players ----------------------------------------------
-  map(scrape_ids, function(x.gameid) {
+  purrr::map(scrape_ids, function(x.gameid) {
     print(glue('{x.gameid}'))
     x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
@@ -341,7 +341,7 @@ fx.scrape_nst <- function(x.season, con = fx.db_con(x.host = 'localhost')) {
     pull(game_id)
   
   # Scrape NST Games ------------------------------------------------------
-  map(scrape_ids, function(x.gameid) {
+  purrr::map(scrape_ids, function(x.gameid) {
     # x.gameid <- 2020020543
     # con <- initR::fx.db_con()
     print(x.gameid)
