@@ -101,7 +101,6 @@ fx.setdir(proj_name)
 con <- initR::fx.db_con(x.host = 'localhost') # connect to DB using personal initR functions
 dbListTables(con)
 map(.x=dbListTables(con), ~tbl(con, .x))
-dbDisconnect(con)
 
 current_season <- 2021
 current_full_season <- glue('{current_season}{current_season+1}')
@@ -132,7 +131,6 @@ active_players <- nhlapi::nhl_teams_rosters() %>%
   janitor::clean_names()
 
 # Load roster db and join with latest roster scrape
-con <- fx.db_con(x.host = 'localhost')
 roster_df <- tbl(con, 'roster') %>% 
   filter(season == current_full_season) %>% 
   select(-game_id,
