@@ -158,6 +158,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
            corsi) |> 
     group_by(season, game_id, on_ice_player_name) |> 
     summarise(
+      player_team_abbr = first(player_team_abbr),
       corsi = sum(corsi, na.rm = T)
     )
   
@@ -187,11 +188,13 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
            fenwick) |> 
     group_by(season, game_id, on_ice_player_name) |> 
     summarise(
+      player_team_abbr = first(player_team_abbr),
       fenwick = sum(fenwick, na.rm = T)
     )
   
   on_ice_data <- corsi_data |> 
-    left_join(fenwick_data, by = c('season', 'game_id', 'on_ice_player_name'))
+    left_join(fenwick_data, by = c('season', 'game_id', 'on_ice_player_name', 'player_team_abbr')) |> 
+    rename(player_name = on_ice_player_name)
   
   # Time On Ice stats -----------------------------------------------------
   
@@ -282,7 +285,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       player_id = event_player_1_id, 
       player_name = event_player_1_name
       ) |>
-    dplyr::group_by(player_id, player_name) |>
+    dplyr::group_by(season, game_id, player_id, player_name) |>
     dplyr::summarise(penalty_minutes = sum(penalty_minutes, na.rm = T))
   
   total_penalties_data <- pbp |> 
@@ -298,6 +301,8 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       player_type = event_player_1_type
     ) |> 
     dplyr::group_by(
+      season, 
+      game_id,
       secondary_type, 
       player_id, 
       player_name
@@ -315,8 +320,8 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
     tidyr::spread(key = secondary_type, value = n) |> 
     janitor::clean_names()
   
-  penalty_data <- totaL_pim_data |> 
-    dplyr::left_join(total_penalties_data, by = c('player_id', 'player_name'))
+  penalty_data <- total_pim_data |> 
+    dplyr::left_join(total_penalties_data, by = c('season', 'game_id', 'player_id', 'player_name'))
   
   # Receiving stats ---------------------------------------------------------
   
