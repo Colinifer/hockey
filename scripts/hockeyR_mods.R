@@ -202,8 +202,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
   # On-Ice Stats ------------------------------------------------------------
   
   corsi_data <- pbp |>
-    filter(event %in% pbp.corsi_events & 
-             strength_state != '5v5') |>
+    filter(event %in% pbp.corsi_events) |>
     select(
       season,
       game_id,
@@ -247,9 +246,16 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
                                       substr(strength_state, 2, 2), 
                                       substr(strength_state, 1, 1)),
         TRUE ~ strength_state
+      ),
+      strength = case_when(
+        strength_state %in% c('5v5', '4v4', '3v3')
       )
     ) |> 
-    group_by(season, game_id, on_ice_player_name, player_team_abbr, strength_state) |>
+    group_by(season,
+             # game_id,
+             on_ice_player_name,
+             player_team_abbr,
+             strength_state) |> 
     summarise(
       total_corsi_events = sum(is_corsi_event, na.rm = T),
       cumulative_corsi = sum(cumulative_corsi, na.rm = T),
