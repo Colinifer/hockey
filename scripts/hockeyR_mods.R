@@ -243,19 +243,42 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
           player_team_abbr != home_abbreviation & 
           !(strength_state %in% pbp.even_strength) & 
           corsi_against == 1 ~ paste0(substr(strength_state, 3, 3), 
-                                      substr(strength_state, 2, 2), 
+                                      'v', 
                                       substr(strength_state, 1, 1)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr == home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          corsi_against == -1 ~ paste0(substr(strength_state, 3, 3), 
+                                      'v', 
+                                      substr(strength_state, 1, 1)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr != home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          corsi_against == -1 ~ paste0(substr(strength_state, 1, 1), 
+                                      'v', 
+                                      substr(strength_state, 3, 3)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr == home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          corsi_against == 1 ~ paste0(substr(strength_state, 1, 1), 
+                                       'v', 
+                                       substr(strength_state, 3, 3)),
         TRUE ~ strength_state
       ),
       strength = case_when(
-        strength_state %in% c('5v5', '4v4', '3v3')
+        substr(strength_state, 1, 1) == substr(strength_state, 3, 3) ~ 'EV',
+        substr(strength_state, 1, 1) > substr(strength_state, 3, 3) ~ 'PP',
+        substr(strength_state, 1, 1) < substr(strength_state, 3, 3) ~ 'SH',
+        substr(strength_state, 1, 1) > 6 | substr(strength_state, 3, 3) > 5 ~ 'EN'
       )
     ) |> 
     group_by(season,
              # game_id,
              on_ice_player_name,
              player_team_abbr,
-             strength_state) |> 
+             strength_state,
+             NULL
+             ) |> 
     summarise(
       total_corsi_events = sum(is_corsi_event, na.rm = T),
       cumulative_corsi = sum(cumulative_corsi, na.rm = T),
@@ -298,7 +321,40 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       ),
       is_fenwick_event = 1,
       fenwick_for = ifelse(player_team_abbr == event_team_abbr, 1, 0),
-      fenwick_against = ifelse(player_team_abbr != event_team_abbr, 1, 0)
+      fenwick_against = ifelse(player_team_abbr != event_team_abbr, 1, 0),
+      strength_state = case_when(
+        player_team_abbr != event_team_abbr &
+          player_team_abbr != home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          fenwick_against == 1 ~ paste0(substr(strength_state, 3, 3), 
+                                      'v', 
+                                      substr(strength_state, 1, 1)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr == home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          fenwick_against == -1 ~ paste0(substr(strength_state, 3, 3), 
+                                       'v', 
+                                       substr(strength_state, 1, 1)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr != home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          fenwick_against == -1 ~ paste0(substr(strength_state, 1, 1), 
+                                       'v', 
+                                       substr(strength_state, 3, 3)),
+        player_team_abbr != event_team_abbr &
+          player_team_abbr == home_abbreviation & 
+          !(strength_state %in% pbp.even_strength) & 
+          fenwick_against == 1 ~ paste0(substr(strength_state, 1, 1), 
+                                      'v', 
+                                      substr(strength_state, 3, 3)),
+        TRUE ~ strength_state
+      ),
+      strength = case_when(
+        substr(strength_state, 1, 1) == substr(strength_state, 3, 3) ~ 'EV',
+        substr(strength_state, 1, 1) > substr(strength_state, 3, 3) ~ 'PP',
+        substr(strength_state, 1, 1) < substr(strength_state, 3, 3) ~ 'SH',
+        substr(strength_state, 1, 1) > 6 | substr(strength_state, 3, 3) > 5 ~ 'EN'
+      )
     ) |>
     # select(season,
     #        game_id,
