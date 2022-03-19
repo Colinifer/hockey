@@ -209,35 +209,32 @@ fx.scrape_moneypuck <- function(x.season, con = fx.db_con(x.host = 'localhost'))
     print(glue('{x.gameid}'))
     x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
+    mp_df_path <- glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds')
     
-    mp_base <- 'http://moneypuck.com/moneypuck/gameData'
-    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
-      janitor::clean_names() %>% 
-      # mutate(game_id = gsub("^.*\\.","", x))
-      mutate(season = mp_season_id,
-             game_id = x.gameid) %>% 
-      select(
-        season,
-        game_id,
-        everything(),
-        NULL
-      )
-    
-    mp_csv %>% 
-      write_rds(glue('data/moneypuck_games/{mp_season_id}/{x.gameid}.rds'))
-    
-    # mp_csv %>% 
-    #   bind_rows(
-    #     mp_games_ds %>% 
-    #       filter(season == mp_season_id & 
-    #                game_id != x.gameid) %>% 
-    #       collect()
-    #   ) %>% 
-    #   write_parquet(glue('data/moneypuck/games/{mp_season_id}/mp_games_{mp_season_id}.parquet'))
-    
-    mp_csv %>% 
+    if (file.exists(mp_df_path) == TRUE) {
+      print(glue('Fetching {x.gameid} locally'))
+      mp_df <- read_rds(mp_df_path)
+    } else {
+      print(glue('Fetching {x.gameid} from moneypuck.com'))
+      mp_base <- 'http://moneypuck.com/moneypuck/gameData'
+      mp_df <- url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')) %>% 
+        read_csv(col_types = cols()) |> 
+        janitor::clean_names() %>% 
+        # mutate(game_id = gsub("^.*\\.","", x))
+        mutate(season = mp_season_id,
+               game_id = x.gameid) %>% 
+        select(
+          season,
+          game_id,
+          everything(),
+          NULL
+        )
+      
+      mp_df %>% 
+        write_rds(mp_df_path)
+    }
+    mp_df %>% 
       RPostgres::dbWriteTable(con, 'moneypuck_games', ., append = TRUE, row.names = FALSE)
-    # dbDisconnect(con)
     
   })
   
@@ -259,30 +256,27 @@ fx.scrape_moneypuck <- function(x.season, con = fx.db_con(x.host = 'localhost'))
     print(glue('{x.gameid}'))
     x.year <- x.season
     mp_season_id <- glue('{x.year}{x.year+1}') %>% as.integer()
+    mp_df_path <- glue('data/moneypuck_players/{mp_season_id}/{x.gameid}.rds')
     
-    mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
-    mp_csv <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
-      janitor::clean_names() %>%
-      mutate(game_id = x.gameid,
-             season = mp_season_id
-             ) %>% 
-      select(game_id, 
-             season,
-             everything())
-    
-    mp_csv %>% 
-      saveRDS(glue('data/moneypuck_players/{mp_season_id}/{x.gameid}.rds'))
-    
-    # mp_csv %>% 
-    #   bind_rows(
-    #     mp_players_ds %>% 
-    #       filter(season == mp_season_id & 
-    #                game_id != x.gameid) %>% 
-    #       collect()
-    #   ) %>% 
-    #   write_parquet(glue('data/moneypuck/players/{mp_season_id}/mp_players_{mp_season_id}.parquet'))
-
-    mp_csv %>% 
+    if (file.exists(mp_df_path) == TRUE) {
+      print(glue('Fetching {x.gameid} locally'))
+      mp_df <- read_rds(mp_df_path)
+    } else {
+      print(glue('Fetching {x.gameid} from moneypuck.com'))
+      mp_base <- 'http://moneypuck.com/moneypuck/playerData/games'
+      mp_df <- read_csv(url(glue('{mp_base}/{mp_season_id}/{x.gameid}.csv')), col_types = cols()) %>% 
+        janitor::clean_names() %>%
+        mutate(game_id = x.gameid,
+               season = mp_season_id
+        ) %>% 
+        select(game_id, 
+               season,
+               everything())
+      
+      mp_df %>% 
+        saveRDS(mp_df_path)
+    }
+        mp_df %>% 
       RPostgres::dbWriteTable(con, 'moneypuck_players', ., append = TRUE, row.names = FALSE)
     
   })

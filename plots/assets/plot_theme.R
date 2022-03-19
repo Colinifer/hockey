@@ -51,15 +51,15 @@ extrafont::loadfonts(quiet = TRUE)
 # Create color palette
 color_cw <-
   c(
-    "#1D2329",
-    "#2C343A",
-    "#38424B",
-    "#16191C",
-    "#e0e0e0",
-    "#1AB063",
-    "#0580DC",
-    "#D64964",
-    "#959595"
+    'dark_black' = "#1D2329",
+    'light_black' = "#2C343A",
+    'dark_grey' = "#38424B",
+    'black' = "#16191C",
+    'white' = "#e0e0e0",
+    'green' = "#1AB063",
+    'blue' = "#0580DC",
+    'red' = "#D64964",
+    'grey' = "#959595"
   )
 
 # functions to retrieve images
@@ -170,26 +170,51 @@ brand_plot <- function(orig_plot, save_name, asp = 1, base_size = 5, data_home =
 }
 
 # main cw theme
-theme_cw <-  theme(
-  line = element_line(lineend = 'round', color = color_cw[1]),
-  text = element_text(family = "Montserrat", color = color_cw[5]),
-  plot.background = element_rect(fill = color_cw[1], color = 'transparent'),
-  panel.border = element_rect(color = color_cw[1], fill = NA),
-  panel.background = element_rect(fill = color_cw[2], color = 'transparent'),
-  axis.ticks = element_line(color = color_cw[5], size = 0.5),
+theme_cw_dark <-  theme(
+  line = element_line(lineend = 'round', color = color_cw['dark_black']),
+  text = element_text(family = "Montserrat", color = color_cw['white']),
+  plot.background = element_rect(fill = color_cw['dark_black'], color = 'transparent'),
+  panel.border = element_rect(color = color_cw['dark_black'], fill = NA),
+  panel.background = element_rect(fill = color_cw['light_black'], color = 'transparent'),
+  axis.ticks = element_line(color = color_cw['white'], size = 0.5),
   axis.ticks.length = unit(2.75, 'pt'),
   axis.title = element_text(family = "Chivo", face = "bold", size = 8),
   axis.title.y = element_text(angle = 90, vjust = 0.5),
-  axis.text = element_text(size = 7, color = color_cw[5]),
+  axis.text = element_text(size = 7, color = color_cw['white']),
   plot.title = element_text(family = "Chivo", face = "bold", size = 14),
   plot.subtitle = element_text(size = 8),
   plot.caption = element_text(family = "Montserrat", size = 5),
-  legend.background = element_rect(fill = color_cw[2], color = color_cw[5]),
+  legend.background = element_rect(fill = color_cw['light_black'], color = color_cw[5]),
   legend.key = element_blank(),
   panel.grid.minor = element_blank(),
-  panel.grid.major = element_line(color=color_cw[4], size = 0.3),
-  strip.background = element_rect(fill = color_cw[3]),
-  strip.text = element_text(size = 6, color = color_cw[5], family = "Chivo"),
+  panel.grid.major = element_line(color = color_cw['black'], size = 0.3),
+  strip.background = element_rect(fill = color_cw['dark_grey']),
+  strip.text = element_text(size = 6, color = color_cw['white'], family = "Chivo"),
+  legend.position = 'bottom',
+  panel.spacing.y = unit(0, 'lines'),
+  panel.spacing.x = unit(0.1, 'lines')
+)
+
+theme_cw_light <-  theme(
+  line = element_line(lineend = 'round', color = color_cw['white']),
+  text = element_text(family = "Montserrat", color = color_cw['dark_black']),
+  plot.background = element_rect(fill = '#fcfcfc', color = 'transparent'),
+  panel.border = element_rect(color = color_cw['white'], fill = NA),
+  panel.background = element_rect(fill = color_cw['white'], color = 'transparent'),
+  axis.ticks = element_line(color = color_cw['dark_black'], size = 0.5),
+  axis.ticks.length = unit(2.75, 'pt'),
+  axis.title = element_text(family = "Chivo", face = "bold", size = 8, color = color_cw['dark_grey']),
+  axis.title.y = element_text(angle = 90, vjust = 0.5),
+  axis.text = element_text(size = 7, color = color_cw['dark_black']),
+  plot.title = element_text(family = "Chivo", face = "bold", size = 14),
+  plot.subtitle = element_text(size = 8, color = color_cw['dark_grey']),
+  plot.caption = element_text(family = "Montserrat", size = 5),
+  legend.background = element_rect(fill = color_cw['white'], color = color_cw['white']),
+  legend.key = element_blank(),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_line(color = '#fcfcfc', size = 0.3),
+  strip.background = element_rect(fill = color_cw['white']),
+  strip.text = element_text(size = 6, color = color_cw['dark_grey'], family = "Chivo"),
   legend.position = 'bottom',
   panel.spacing.y = unit(0, 'lines'),
   panel.spacing.x = unit(0.1, 'lines')
