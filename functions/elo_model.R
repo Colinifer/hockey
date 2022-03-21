@@ -4,7 +4,6 @@ library(lubridate)
 library(elo)
 library(MLmetrics)
 
-
 con <- fx.db_con(x.host = 'localhost')
 raw_data <- tbl(con, 'game_info') %>%
   filter(season %in% c(20202021, 20212022)) %>%
@@ -23,11 +22,24 @@ raw_data <- raw_data %>%
          margin = abs(home_score - away_score)) |> 
   arrange(game_date)
 
-elo_model <- elo::elo.run(data = raw_data,
-                          formula = home_result ~ home_team + away_team + k(6 + 6*margin))
+# elo_model <- 
+  
+  elo::elo.run(data = raw_data,
+                          formula = home_result ~ home_team + away_team, k = 6) |> 
+  as.data.frame()
 
-elo_model <- elo::elo.run(data = raw_data,
-                          formula = 6 * ((.6686 * log(margin) + 0.8048) * (2.05 / ((home_team - away_team) * .001 + 2.05))) * (home_result - home_results))
+# elo_model <- 
+  
+  elo::elo.run(data = raw_data,
+                          formula = score(home_score, away_score) ~ adjust(home_team, 50) + away_team, k = 6) |>
+    as.data.frame()
+  
+  elo::elo.run(data = raw_data,
+               formula = score(home_score, away_score) ~ k(6) * adjust(home_team, 50) + away_team) |>
+    as.data.frame()
+  
+# elo_model <- elo::elo.run(data = raw_data,
+#                           formula = 6 * ((.6686 * log(margin) + 0.8048) * (2.05 / ((home_team - away_team) * .001 + 2.05))) * (home_result - home_result))
 
 elo_results <- elo_model %>%
   as.data.frame()
@@ -152,7 +164,7 @@ gg_data <- data_with_probabilities |>
   ) |> 
   arrange(days_ago) |> 
   filter(season == current_full_season & 
-           days_ago <= 14)
+           days_ago <= 56)
 
 last_games <- gg_data |> 
   arrange(days_ago) |> 
