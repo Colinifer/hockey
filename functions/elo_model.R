@@ -1,8 +1,3 @@
-library(readr)
-library(dplyr)
-library(lubridate)
-library(elo)
-library(MLmetrics)
 
 con <- fx.db_con(x.host = 'localhost')
 raw_data <- tbl(con, 'game_info') %>%

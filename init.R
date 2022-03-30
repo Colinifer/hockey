@@ -26,6 +26,7 @@ pkgs <- c(
   'sportyR',
   'hockeyR',
   'nhlplot',
+  'elo',
   
   # DB Packages
   'odbc',
@@ -39,6 +40,7 @@ pkgs <- c(
   'DescTools',
   'zoo',
   'Matrix',
+  'MLmetrics',
   
   # Table packages
   'gt',
