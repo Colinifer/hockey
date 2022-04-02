@@ -263,6 +263,7 @@ annual_nhl_query <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
     2021010099,
     2021020559,
     2021020972,
+    2021021028,
     NULL)
   
   season_start <- schedule_df %>% 
