@@ -117,6 +117,7 @@ source_files <- c(
   'scripts/EH_scrape_functions.R',
   'scripts/m1_update_db.R',
   'scripts/m1_scrape_sources.R',
+  'scripts/fix_strength_state.R',
   # 'scripts/all_functions.R',
   # 'scripts/all_stats.R',
   # 'scripts/misc_functions.R',
@@ -196,9 +197,9 @@ dbDisconnect(con)
 # Update database ---------------------------------------------------------
 
 # Updates database with latest games play-by-play from current seasons
-map(current_season, annual_nhl_query)
-map(current_season, fx.hockeyr_update)
-map(current_season, fx.upload_nhl_game_shifts) # work-in-progress
+map(current_season, annual_nhl_query) # EH
+map(current_season, fx.hockeyr_update) # hockeyR
+map(current_season, fx.upload_nhl_game_shifts) # Shifts (API)
 map(current_season, fx.scrape_moneypuck) # Moneypuck
 map(current_season, fx.scrape_nst) # NatStatTrick
 
