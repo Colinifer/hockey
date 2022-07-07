@@ -152,7 +152,7 @@ fx.upload_nhl_game_shifts <- function(x.season, con = fx.db_con(x.host = 'localh
                           game_date <= date_grid$end_date[.x] & 
                           !(game_id %in% existing_ids) & 
                           !(game_id %in% bad_ids) &
-                          session == 'R' &
+                          session != 'PR' &
                           game_status == 'Final') %>% 
                  pull(game_id)
                

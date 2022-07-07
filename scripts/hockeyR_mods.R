@@ -3,6 +3,11 @@
 # Player stats ------------------------------------------------------------
 
 calculate_player_stats_mod <- function(pbp = pbp_df) {
+  # Requires hockeyR dataframe
+  
+  pbp <- clean_strength_states(pbp)
+    
+  
   pbp_season <- pbp |> 
     pull(season) |> 
     unique()
@@ -19,6 +24,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       team_id = id,
       team_abbreviation = abbreviation,
       team_name,
+      location_name,
       short_name,
       franchise_id,
       division_id,
@@ -81,39 +87,40 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
   # Clean Player Names ------------------------------------------------------
   
   fixed_player_names = c(
-    "Jaret.Anderson-Dolan",
-    "Zach.Aston-Reese",
-    "Nicolas.Aube-Kubel",
-    "Pierre-Edouard.Bellemare",
     "Alex.Barré-Boulet",
-    "Jacob.Bernard-Docker",
-    "Calvin.de Haan",
-    "Michael.Del Zotto",
-    "Pierre-Luc.Dubois",
-    "Oliver.Ekman-Larsson",
-    "Joel.Eriksson Ek",
-    "Marc-Andre.Fleury",
-    "Benoit-Olivier.Groulx",
-    "Axel.Jonsson-Fjallby",
-    "K'Andre.Miller",
-    "Ryan.Nugent-Hopkins",
-    "Pierre-Olivier.Joseph",
-    "Liam.O'Brien",
-    "Drew.O'Connor",
-    "Logan.O'Connor",
-    "Ryan.O'Reilly",
-    "Jean-Gabriel.Pageau",
-    "James.van Riemsdyk",
-    "Trevor.van Riemsdyk",
-    "Tim.Stützle",
     "Andrei.Svechnikov",
+    "Axel.Jonsson-Fjallby",
+    "Benoit-Olivier.Groulx",
+    "Calvin.de Haan",
+    "Drew.O'Connor",
+    "Jacob.Bernard-Docker",
+    "James.van Riemsdyk",
+    "Jaret.Anderson-Dolan",
+    "Jean-Gabriel.Pageau",
+    "Joel.Eriksson Ek",
+    "K'Andre.Miller",
+    "Liam.O'Brien",
+    "Logan.O'Connor",
+    "Marc-Andre.Fleury",
     "Marc-Edouard.Vlasic",
+    "Michael.Del Zotto",
+    "Nicolas.Aube-Kubel",
+    "Oliver.Ekman-Larsson",
+    "Pierre-Edouard.Bellemare",
+    "Pierre-Luc.Dubois",
+    "Pierre-Olivier.Joseph",
+    "Ryan.Nugent-Hopkins",
+    "Ryan.O'Reilly",
+    "Tim.Stützle",
+    "Trevor.van Riemsdyk",
+    "Zach.Aston-Reese",
     NULL
   )
   
   # Prepare data ------------------------------------------------------------
-  
-  # filter down to the 2 dfs we need
+
+
+  # All events data ---------------------------------------------------------
   
   # Count all event_player_1 events
   main_events_data <- pbp |>
@@ -127,29 +134,84 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       player_name = event_player_1_name,
       player_id = event_player_1_id,
       player_type = event_player_1_type,
-      event_team_abbr
+      event_team_abbr,
+      season_type,
+      strength_state
     ) |>
     dplyr::group_by(season,
-                    game_id,
+                    # game_id,
                     event,
                     player_id,
-                    player_name) |>
+                    player_name,
+                    season_type,
+                    # strength_state
+                    ) |>
     dplyr::count() |>
     dplyr::mutate(
       event = dplyr::case_when(
         event == 'Goal' ~ 'Goals',
-        event == 'Blocked Shot' ~ 'Blocked Shots',
+        event == 'Shot' ~ 'Shots',
+        event == 'Blocked Shot' ~ 'Shots Blocked',
+        event == 'Missed Shot' ~ 'Missed Shots',
         event == 'Faceoff' ~ 'Faceoffs Won',
         event == 'Hit' ~ 'Hits',
         event == 'Penalty' ~ 'Penalties Taken',
         event == 'Takeaway' ~ 'Takeaways',
         event == 'Giveaway' ~ 'Giveaways,',
         TRUE ~ event
-      )
+      ),
     ) |>
     ungroup() |> 
-    tidyr::spread(key = event, value = n) |>
-    janitor::clean_names()
+    tidyr::spread(key = event, value = n, fill = 0) |> 
+    janitor::clean_names() |>
+    mutate(
+      shots = shots + goals,
+      shot_attempts = goals + shots + missed_shots + shots_blocked
+    )
+  
+  shots_data <- pbp |>
+    dplyr::filter(event %in% pbp.corsi_events &
+                    period_type != 'SHOOTOUT') |>
+    dplyr::select(
+      season,
+      game_id,
+      event_idx,
+      event,
+      secondary_type,
+      player_name = event_player_1_name,
+      player_id = event_player_1_id,
+      player_type = event_player_1_type,
+      event_team_abbr,
+      season_type,
+      strength_state
+    ) |> 
+    filter(!is.na(secondary_type)) |> 
+    dplyr::group_by(season,
+                    # game_id,
+                    event,
+                    secondary_type,
+                    player_id,
+                    player_name,
+                    season_type,
+                    # strength_state
+    ) |>
+    dplyr::count() |>
+    ungroup() |> 
+    mutate(
+      event_secondary = paste(event, secondary_type)
+    ) |> 
+    select(season, event_secondary, player_id, player_name, season_type, n) |> 
+    tidyr::spread(key = event_secondary, value = n, fill = 0) |> 
+    janitor::clean_names() |> 
+    mutate(
+      shot_backhand = goal_backhand + shot_backhand,
+      shot_deflected = goal_deflected + shot_deflected,
+      shot_slap_shot = goal_slap_shot + shot_slap_shot,
+      shot_snap_shot = goal_snap_shot + shot_snap_shot,
+      shot_tip_in = goal_tip_in + shot_tip_in,
+      shot_wrap_around = goal_wrap_around + shot_wrap_around,
+      shot_wrist_shot = goal_wrist_shot + shot_wrist_shot
+    )
   
   # Count all event_player_2 events
   secondary_events_data <- pbp |>
@@ -157,7 +219,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       event %in% pbp.main_events &
         !is.na(event_player_2_id) &
         !(
-          event %in% c(st.shot_events, 'Takeaway', 'Giveaway', 'Missed Shot')
+          event %in% c(pbp.shot_events, 'Takeaway', 'Giveaway', 'Missed Shot')
         ) &
         period_type != 'SHOOTOUT'
     ) |>
@@ -169,18 +231,22 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       player_name = event_player_2_name,
       player_id = event_player_2_id,
       player_type = event_player_2_type,
-      event_team_abbr
+      event_team_abbr,
+      season_type,
+      strength_state
     ) |>
     dplyr::group_by(season,
-                    game_id,
+                    # game_id,
                     event,
                     player_id,
-                    player_name) |>
+                    player_name,
+                    season_type,
+                    # strength_state
+                    ) |>
     dplyr::count() |>
     dplyr::mutate(
       event = dplyr::case_when(
-        event == 'Shot' ~ 'Shots Against',
-        event == 'Blocked Shot' ~ 'Shots Blocked',
+        event == 'Blocked Shot' ~ 'Blocked Shots',
         event == 'Faceoff' ~ 'Faceoffs Lost',
         event == 'Hit' ~ 'Hits Taken',
         event == 'Penalty' ~ 'Penalties Drawn',
@@ -188,12 +254,28 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       )
     ) |>
     ungroup() |> 
-    tidyr::spread(key = event, value = n) |>
+    tidyr::spread(key = event, value = n, fill = 0) |>
     janitor::clean_names()
   
   all_events_data <- main_events_data |>
-    dplyr::left_join(secondary_events_data,
-                     by = c('season', 'game_id', 'player_id', 'player_name'))
+    dplyr::full_join(secondary_events_data,
+                     by = c('season',
+                            'game_id',
+                            'player_id',
+                            'player_name',
+                            'season_type',
+                            'strength_state')
+                     ) |> 
+    dplyr::full_join(shots_data,
+                     by = c('season',
+                            'game_id',
+                            'player_id',
+                            'player_name',
+                            'season_type',
+                            'strength_state')
+                     )
+  
+  all_events_data[is.na(all_events_data)] <- 0
   
   # Get data seasons
   data_seasons <- pbp %>% pull(season) %>% unique()
@@ -201,17 +283,21 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
   
   # On-Ice Stats ------------------------------------------------------------
   
-  corsi_data <- pbp |>
-    filter(event %in% pbp.corsi_events) |>
+  on_ice_data <- pbp |>
+    # filter(game_id == 2021030412) |> 
+    filter(event %in% pbp.main_events & 
+             period_type != 'SHOOTOUT') |>
     select(
       season,
       game_id,
+      season_type,
       event_idx,
       event,
       event_team_abbr,
       home_abbreviation,
       away_abbreviation,
       contains('_on_'),
+      strength_code,
       strength_state
     ) |>
     pivot_longer(
@@ -227,17 +313,101 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
         away_abbreviation
       ),
       cumulative_corsi = case_when(
-        player_team_abbr == event_team_abbr & event != 'Blocked Shot' ~ 1,
+        player_team_abbr == event_team_abbr & 
+          event %in% pbp.corsi_events &
+          event != 'Blocked Shot' ~ 1,
         player_team_abbr != event_team_abbr &
+          event %in% pbp.corsi_events &
           event == 'Blocked Shot' ~ 1,
         player_team_abbr != event_team_abbr &
+          event %in% pbp.corsi_events &
           event != 'Blocked Shot' ~ -1,
         player_team_abbr == event_team_abbr &
+          event %in% pbp.corsi_events &
           event == 'Blocked Shot' ~ -1
       ),
-      is_corsi_event = 1,
-      corsi_for = ifelse(player_team_abbr == event_team_abbr, 1, 0),
-      corsi_against = ifelse(player_team_abbr != event_team_abbr, 1, 0),
+      cumulative_fenwick = case_when(
+        player_team_abbr == event_team_abbr & 
+          event %in% pbp.fenwick_events ~ 1,
+        player_team_abbr != event_team_abbr &
+          event %in% pbp.corsi_events ~ -1,
+      ),
+      is_goal_event = case_when(event == 'Goal' ~ 1,
+                                TRUE ~ 0),
+      is_corsi_event = case_when(event %in% pbp.corsi_events ~ 1,
+                                 TRUE ~ 0),
+      is_fenwick_event = case_when(event %in% pbp.fenwick_events ~ 1,
+                                 TRUE ~ 0),
+      is_hit_event = case_when(event == 'Hit' ~ 1,
+                               TRUE ~ 0),
+      is_giveaway_event = case_when(event == 'Giveaway' ~ 1,
+                               TRUE ~ 0),
+      is_takeaway_event = case_when(event == 'Takeaway' ~ 1,
+                               TRUE ~ 0),
+      corsi_for = case_when(
+        player_team_abbr == event_team_abbr & 
+          event %in% pbp.corsi_events &
+          event != 'Blocked Shot' ~ 1,
+        player_team_abbr != event_team_abbr & 
+          event %in% pbp.corsi_events &
+          event == 'Blocked Shot' ~ 1,
+        TRUE ~ 0
+      ),
+      corsi_against = case_when(
+        player_team_abbr == event_team_abbr & 
+          event %in% pbp.corsi_events &
+          event == 'Blocked Shot' ~ 1,
+        player_team_abbr != event_team_abbr & 
+          event %in% pbp.corsi_events &
+          event != 'Blocked Shot' ~ 1,
+        TRUE ~ 0
+      ),
+      fenwick_for = case_when(
+        player_team_abbr == event_team_abbr & 
+          event %in% pbp.fenwick_events ~ 1,
+        TRUE ~ 0
+      ),
+      fenwick_against = case_when(
+        player_team_abbr != event_team_abbr & 
+          event %in% pbp.fenwick_events ~ 1,
+        TRUE ~ 0
+      ),
+      shots_for = case_when(player_team_abbr == event_team_abbr & 
+                              event == 'Shot' ~ 1,
+                            TRUE ~ 0),
+      shots_against = case_when(player_team_abbr != event_team_abbr & 
+                              event == 'Shot' ~ 1,
+                            TRUE ~ 0),
+      goals_for = case_when(player_team_abbr == event_team_abbr & 
+                              event == 'Goal' ~ 1,
+                            TRUE ~ 0),
+      goals_against = case_when(player_team_abbr != event_team_abbr & 
+                                 event == 'Goal' ~ 1,
+                               TRUE ~ 0),
+      hits_for = case_when(player_team_abbr == event_team_abbr & 
+                                  event == 'Hit' ~ 1,
+                                TRUE ~ 0),
+      hits_against = case_when(player_team_abbr != event_team_abbr & 
+                                      event == 'Hit' ~ 1,
+                                    TRUE ~ 0),
+      giveaways_for = case_when(player_team_abbr == event_team_abbr & 
+                                  event == 'Giveaway' ~ 1,
+                                TRUE ~ 0),
+      giveaways_against = case_when(player_team_abbr != event_team_abbr & 
+                                  event == 'Giveaway' ~ 1,
+                                TRUE ~ 0),
+      takeaways_for = case_when(player_team_abbr == event_team_abbr & 
+                                  event == 'Takeaway' ~ 1,
+                                TRUE ~ 0),
+      takeaways_against = case_when(player_team_abbr != event_team_abbr & 
+                                      event == 'Takeaway' ~ 1,
+                                    TRUE ~ 0),
+      penalties_for = case_when(player_team_abbr == event_team_abbr & 
+                                  event == 'Penalty' ~ 1,
+                                TRUE ~ 0),
+      penalties_against = case_when(player_team_abbr != event_team_abbr & 
+                                      event == 'Penalty' ~ 1,
+                                    TRUE ~ 0),
       strength_state = case_when(
         player_team_abbr != event_team_abbr &
           player_team_abbr != home_abbreviation & 
@@ -273,9 +443,11 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       )
     ) |> 
     group_by(season,
-             # game_id,
+             game_id,
              on_ice_player_name,
              player_team_abbr,
+             season_type,
+             strength_code,
              strength_state,
              NULL
              ) |> 
@@ -283,121 +455,34 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       total_corsi_events = sum(is_corsi_event, na.rm = T),
       cumulative_corsi = sum(cumulative_corsi, na.rm = T),
       corsi_for = sum(corsi_for, na.rm = T),
-      corsi_against = sum(corsi_against, na.rm = T)
-    ) |>
-    mutate(
-      corsi_pct = corsi_for / total_corsi_events
-    ) |> 
-    ungroup()
-  
-  fenwick_data <- pbp |>
-    filter(event %in% pbp.fenwick_events) |>
-    select(
-      season,
-      game_id,
-      event_idx,
-      event,
-      event_team_abbr,
-      home_abbreviation,
-      away_abbreviation,
-      contains('_on_'),
-      strength_state
-    ) |>
-    pivot_longer(
-      cols = contains('_on_'),
-      # names_to = NA,
-      values_to = 'on_ice_player_name',
-      values_drop_na = TRUE
-    ) |>
-    mutate(
-      player_team_abbr = ifelse(
-        grepl('home', name) == TRUE,
-        home_abbreviation,
-        away_abbreviation
-      ),
-      fenwick = case_when(
-        player_team_abbr == event_team_abbr ~ 1,
-        player_team_abbr != event_team_abbr ~ -1
-      ),
-      is_fenwick_event = 1,
-      fenwick_for = ifelse(player_team_abbr == event_team_abbr, 1, 0),
-      fenwick_against = ifelse(player_team_abbr != event_team_abbr, 1, 0),
-      strength_state = case_when(
-        player_team_abbr != event_team_abbr &
-          player_team_abbr != home_abbreviation & 
-          !(strength_state %in% pbp.even_strength) & 
-          fenwick_against == 1 ~ paste0(substr(strength_state, 3, 3), 
-                                      'v', 
-                                      substr(strength_state, 1, 1)),
-        player_team_abbr != event_team_abbr &
-          player_team_abbr == home_abbreviation & 
-          !(strength_state %in% pbp.even_strength) & 
-          fenwick_against == -1 ~ paste0(substr(strength_state, 3, 3), 
-                                       'v', 
-                                       substr(strength_state, 1, 1)),
-        player_team_abbr != event_team_abbr &
-          player_team_abbr != home_abbreviation & 
-          !(strength_state %in% pbp.even_strength) & 
-          fenwick_against == -1 ~ paste0(substr(strength_state, 1, 1), 
-                                       'v', 
-                                       substr(strength_state, 3, 3)),
-        player_team_abbr != event_team_abbr &
-          player_team_abbr == home_abbreviation & 
-          !(strength_state %in% pbp.even_strength) & 
-          fenwick_against == 1 ~ paste0(substr(strength_state, 1, 1), 
-                                      'v', 
-                                      substr(strength_state, 3, 3)),
-        TRUE ~ strength_state
-      ),
-      strength = case_when(
-        substr(strength_state, 1, 1) == substr(strength_state, 3, 3) ~ 'EV',
-        substr(strength_state, 1, 1) > substr(strength_state, 3, 3) ~ 'PP',
-        substr(strength_state, 1, 1) < substr(strength_state, 3, 3) ~ 'SH',
-        substr(strength_state, 1, 1) > 6 | substr(strength_state, 3, 3) > 5 ~ 'EN'
-      )
-    ) |>
-    # select(season,
-    #        game_id,
-    #        player_team_abbr,
-    #        on_ice_player_name,
-    #        is_fenwick_event,
-    #        fenwick_for,
-    #        fenwick_against) |>
-    group_by(season, game_id, on_ice_player_name, player_team_abbr, strength_state) |>
-    summarise(
-      player_team_abbr = first(player_team_abbr),
-      
+      corsi_against = sum(corsi_against, na.rm = T),
       total_fenwick_events = sum(is_fenwick_event, na.rm = T),
+      cumulative_fenwick = sum(cumulative_corsi, na.rm = T),
       fenwick_for = sum(fenwick_for, na.rm = T),
-      fenwick_against = sum(fenwick_against, na.rm = T)
+      fenwick_against = sum(fenwick_against, na.rm = T),
+      total_goal_events = sum(is_goal_event, na.rm = T),
+      shots_for = sum(shots_for, na.rm = T), 
+      shots_against = sum(shots_against, na.rm = T),
+      goals_for = sum(goals_for, na.rm = T), 
+      goals_against = sum(goals_against, na.rm = T),
+      hits_for = sum(hits_for, na.rm = T), 
+      hits_against = sum(hits_against, na.rm = T),
+      giveaways_for = sum(giveaways_for, na.rm = T),
+      giveaways_against = sum(giveaways_against, na.rm = T),
+      takeaways_for = sum(takeaways_for, na.rm = T),
+      takeaways_against = sum(takeaways_against, na.rm = T),
+      penalties_for = sum(penalties_for, na.rm = T),
+      penalties_against = sum(penalties_against, na.rm = T)
     ) |>
     mutate(
-      fenwick_pct = fenwick_for / total_fenwick_events
+      corsi_pct = corsi_for / total_corsi_events,
+      fenwick_pct = fenwick_for / total_fenwick_events,
+      shooting_pct_for = goals_for / corsi_for,
+      shooting_pct_against = goals_against / corsi_against,
+      pdo = (goals_for / (shots_for + goals_for)) + (goals_against / (shots_against + goals_against))
     ) |> 
     ungroup()
   
-  on_ice_data <- corsi_data |>
-    left_join(fenwick_data,
-              by = c(
-                'season',
-                'game_id',
-                'on_ice_player_name',
-                'player_team_abbr'
-              )) |>
-    rename(player_name = on_ice_player_name)
-  
-  on_ice_data |> 
-    group_by(player_name, player_team_abbr) |> 
-    summarise(total_corsi_events = sum(total_corsi_events, na.rm = T),
-              corsi_for = sum(corsi_for, na.rm = T),
-              corsi_against = sum(corsi_against, na.rm = T),
-              total_fenwick_events = sum(total_fenwick_events, na.rm = T),
-              fenwick_for = sum(fenwick_for, na.rm = T),
-              fenwick_against = sum(fenwick_against, na.rm = T)
-    ) |> 
-    mutate(corsi_pct = corsi_for / total_corsi_events,
-           fenwick_pct = fenwick_for / total_fenwick_events) |> 
-    arrange(-corsi_pct)
   
   on_ice_data |>
     anti_join(all_events_data,
@@ -430,8 +515,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
   
   # Time On Ice stats -----------------------------------------------------
   
-  # shifts_start_data <-
-  pbp |>
+  shifts_start_data <- pbp |>
     filter(event == 'Change' & !is.na(num_on)) |>
     select(
       season,
@@ -447,12 +531,35 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       # num_off,
       # players_off,
       event,
-      event_type,
+      secondary_type,
+      strength_code,
+      strength_state,
       # game_seconds_remaining,
       NULL
     ) |>
-    arrange(game_id, event_idx) |>
-    # select(players_on) |>
+    arrange(game_id, event_idx) |> 
+    mutate(
+      secondary_type = case_when(
+        game_seconds_start %% 1200 == 0 ~ 'Line Change',
+        TRUE ~ secondary_type
+      ),
+      strength_state = case_when(
+        game_seconds_start %% 1200 == 0 &
+          substr(strength_state, 3, 3) == '0' ~ paste0(substr(lead(strength_state), 3, 3),
+                                                       substr(lead(strength_state), 2, 2),
+                                                       substr(lead(strength_state), 1, 1)),
+        TRUE ~ strength_state
+      ),
+      strength_code = case_when(
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) > as.numeric(substr(strength_state, 3, 3)) ~ 'PP',
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) < as.numeric(substr(strength_state, 3, 3)) ~ 'SH',
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) == as.numeric(substr(strength_state, 3, 3)) ~ 'EV',
+        TRUE ~ strength_code
+      )
+    ) |> 
     separate(
       players_on,
       sep = ', ',
@@ -491,96 +598,192 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
       values_to = 'players_on',
       values_drop_na = TRUE
     ) |>
-    select(game_id,
+    select(season,
+           game_id,
            event_team,
-           players = players_on,
+           player_name = players_on,
+           secondary_type,
+           strength_code,
+           strength_state,
            game_seconds_start) |>
     unique() |>
-    group_by(game_id, event_team, players) |>
-    mutate(shift_idx = row_number()) |>
+    group_by(game_id, event_team, player_name) |>
+    mutate(shift_idx = row_number()) |> 
     left_join(
-      pbp |>
-        filter(event == 'Change' & !is.na(num_off)) |>
+      rosters |> 
+        mutate(
+          event_team = paste(location_name, team_name)
+        ) |> 
         select(
-          season,
-          game_id,
-          event_idx,
-          event_team,
-          period,
-          # period_time,
-          # period_seconds,
-          game_seconds_finish = game_seconds,
-          # num_on,
-          # players_on,
-          num_off,
-          players_off,
-          event,
-          event_type,
-          # game_seconds_remaining,
-          NULL
-        ) |>
-        arrange(game_id, event_idx) |>
-        # select(players_on) |>
-        separate(
-          players_off,
-          sep = ', ',
-          into = c(
-            'player_off_1',
-            'player_off_2',
-            'player_off_3',
-            'player_off_4',
-            'player_off_5',
-            'player_off_6',
-            'player_off_7',
-            'player_off_8',
-            'player_off_9',
-            'player_off_10',
-            'player_off_11',
-            'player_off_12'
-          )
-        ) |>
-        suppressWarnings() |>
-        pivot_longer(
-          cols = c(
-            'player_off_1',
-            'player_off_2',
-            'player_off_3',
-            'player_off_4',
-            'player_off_5',
-            'player_off_6',
-            'player_off_7',
-            'player_off_8',
-            'player_off_9',
-            'player_off_10',
-            'player_off_11',
-            'player_off_12'
-          ),
-          names_to = 'drop_column',
-          values_to = 'players_off',
-          values_drop_na = TRUE
-        ) |>
-        select(game_id,
-               event_team,
-               players = players_off,
-               game_seconds_finish) |>
-        unique() |>
-        group_by(game_id, event_team, players) |>
-        mutate(shift_idx = row_number()),
-      by = c('game_id', 'event_team', 'players', 'shift_idx')
+          player_name = person_full_name,
+          player_id = person_id,
+          player_team_abbr = team_abbreviation,
+          event_team
+        ),
+      by = c('player_name', 'event_team')
+    )
+  
+  shifts_end_data <- pbp |>
+    filter(event == 'Change' & !is.na(num_off)) |>
+    select(
+      season,
+      game_id,
+      event_idx,
+      event_team,
+      period,
+      # period_time,
+      # period_seconds,
+      game_seconds_finish = game_seconds,
+      # num_on,
+      # players_on,
+      num_off,
+      players_off,
+      event,
+      secondary_type,
+      strength_code,
+      strength_state,
+      # game_seconds_remaining,
+      NULL
     ) |>
-    mutate(shift_length = game_seconds_finish - game_seconds_start)
+    arrange(game_id, event_idx) |> 
+    mutate(
+      strength_state = case_when(
+        game_seconds_finish %% 1200 == 0 &
+          substr(strength_state, 3, 3) == '0' ~ paste0(substr(lag(strength_state), 3, 3), 
+                                                       substr(strength_state, 2, 2), 
+                                                       num_off - 1),
+        game_seconds_finish %% 1200 == 0 &
+          substr(strength_state, 1, 1) == '0' ~ paste0(num_off - 1, 
+                                                       substr(strength_state, 2, 3)),
+        TRUE ~ strength_state
+      ),
+      strength_code = case_when(
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) > as.numeric(substr(strength_state, 3, 3)) ~ 'PP',
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) < as.numeric(substr(strength_state, 3, 3)) ~ 'SH',
+        is.na(strength_code) & 
+          as.numeric(substr(strength_state, 1, 1)) == as.numeric(substr(strength_state, 3, 3)) ~ 'EV',
+        TRUE ~ strength_code
+      )
+    ) |> 
+    separate(
+      players_off,
+      sep = ', ',
+      into = c(
+        'player_off_1',
+        'player_off_2',
+        'player_off_3',
+        'player_off_4',
+        'player_off_5',
+        'player_off_6',
+        'player_off_7',
+        'player_off_8',
+        'player_off_9',
+        'player_off_10',
+        'player_off_11',
+        'player_off_12'
+      )
+    ) |>
+    suppressWarnings() |>
+    pivot_longer(
+      cols = c(
+        'player_off_1',
+        'player_off_2',
+        'player_off_3',
+        'player_off_4',
+        'player_off_5',
+        'player_off_6',
+        'player_off_7',
+        'player_off_8',
+        'player_off_9',
+        'player_off_10',
+        'player_off_11',
+        'player_off_12'
+      ),
+      names_to = 'drop_column',
+      values_to = 'players_off',
+      values_drop_na = TRUE
+    ) |>
+    select(season,
+           game_id,
+           event_team,
+           player_name = players_off,
+           secondary_type,
+           strength_code,
+           strength_state,
+           game_seconds_finish) |>
+    unique() |>
+    group_by(game_id, event_team, player_name) |>
+    mutate(shift_idx = row_number()) |> 
+    left_join(
+      rosters |> 
+        mutate(
+          event_team = paste(location_name, team_name)
+        ) |> 
+        select(
+          player_name = person_full_name,
+          player_id = person_id,
+          player_team_abbr = team_abbreviation,
+          event_team
+        ),
+      by = c('player_name', 'event_team')
+    )
+  
+  shifts_data <- shifts_start_data |> 
+    left_join(
+      shifts_end_data,
+      by = c(
+        'season',
+        'game_id',
+        'event_team',
+        'player_name',
+        'player_id',
+        'player_team_abbr',
+        'shift_idx'
+      ),
+      suffix = c('_shift_start', '_shift_finish')
+    ) %>% 
+    mutate(
+      shift_length = game_seconds_finish - game_seconds_start
+      ) |> 
+    group_by(
+      season, 
+      game_id, 
+      player_id,
+      player_name, 
+      player_team_abbr,
+      strength_code_shift_start, 
+      strength_state_shift_start
+    ) |> 
+    summarise(
+      n_shifts = n(),
+      toi = sum(shift_length, na.rm = T)
+    ) |> 
+    mutate(
+      avg_shift = toi / n_shifts
+    )
   
   # Penalty stats ---------------------------------------------------------
   
-  total_pim_data <- pbp |>
+  total_pim_taken_data <- pbp |>
     dplyr::filter(event == 'Penalty' &
                     penalty_severity != 'Bench Minor') |>
     dplyr::rename(player_id = event_player_1_id,
                   player_name = event_player_1_name) |>
     dplyr::group_by(season, game_id, player_id, player_name) |>
-    dplyr::summarise(penalty_minutes = sum(penalty_minutes, na.rm = T))
+    dplyr::summarise(penalty_minutes_taken = sum(penalty_minutes, na.rm = T))
   
-  total_penalties_data <- pbp |>
+  total_pim_drawn_data <- pbp |>
+    dplyr::filter(event == 'Penalty' &
+                    penalty_severity != 'Bench Minor') |>
+    dplyr::rename(player_id = event_player_2_id,
+                  player_name = event_player_2_name) |>
+    dplyr::group_by(season, game_id, player_id, player_name) |>
+    dplyr::summarise(penalty_minutes_drawn = sum(penalty_minutes, na.rm = T)) |> 
+    filter(!is.na(player_id))
+  
+  total_penalties_taken_data <- pbp |>
     dplyr::filter(event == 'Penalty' &
                     penalty_severity != 'Bench Minor') |>
     dplyr::select(
@@ -598,219 +801,43 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
                     player_id,
                     player_name) |>
     dplyr::count() |>
-    # dplyr::mutate(
-    #   event = dplyr::case_when(
-    #     secondary_type == 'Boarding' ~ 'Boarding Penalties',
-    #     secondary_type == 'Butt ending' ~ 'Butt ending Penalties',
-    #     secondary_type == 'Closing hand on puck' ~ 'Closing hand on puck Penalties',
-    #     secondary_type == 'Penalty' ~ 'Penalties Drawn',
-    #     TRUE ~ event
-    #   )
-    # ) |>
-    tidyr::spread(key = secondary_type, value = n) |>
+    mutate(
+      secondary_type = paste('Taken', secondary_type)
+    ) |> 
+    tidyr::spread(key = secondary_type, value = n, fill = 0) |>
     janitor::clean_names()
   
-  penalty_data <- total_pim_data |>
-    dplyr::left_join(total_penalties_data,
-                     by = c('season', 'game_id', 'player_id', 'player_name'))
-  
-  # Receiving stats ---------------------------------------------------------
-  
-  # receiver df 1: primary receiver
-  rec <- data %>%
-    dplyr::filter(!is.na(.data$receiver_player_id)) %>%
-    dplyr::mutate(hvt = ifelse(yardline_100 <= 10, 1, 0)) %>%
-    dplyr::group_by(.data$receiver_player_id, .data$week, .data$season) %>%
-    dplyr::summarize(
-      name_receiver = dplyr::first(.data$receiver_player_name),
-      team_receiver = dplyr::first(.data$posteam),
-      yards = sum(.data$receiving_yards, na.rm = TRUE),
-      receptions = sum(.data$complete_pass == 1),
-      targets = dplyr::n(),
-      tds = sum(.data$td_player_id == .data$receiver_player_id, na.rm = TRUE),
-      receiving_fumbles = sum(
-        .data$fumble == 1 &
-          .data$fumbled_1_player_id == .data$receiver_player_id &
-          is.na(.data$lateral_receiver_player_id)
-      ),
-      receiving_fumbles_lost = sum(
-        .data$fumble_lost == 1 &
-          .data$fumbled_1_player_id == .data$receiver_player_id &
-          is.na(.data$lateral_receiver_player_id)
-      ),
-      receiving_air_yards = sum(.data$air_yards, na.rm = TRUE),
-      receiving_yards_after_catch = sum(.data$yards_after_catch, na.rm = TRUE),
-      receiving_first_downs = sum(
-        .data$first_down_pass & is.na(.data$lateral_receiver_player_id)
-      ),
-      receiving_epa = sum(.data$epa, na.rm = TRUE)
-    ) %>%
-    dplyr::ungroup()
-  
-  # receiver df 2: lateral
-  laterals <- data %>%
-    dplyr::filter(!is.na(.data$lateral_receiver_player_id)) %>%
-    dplyr::mutate(hvt = ifelse(yardline_100 <= 10, 1, 0)) %>%
-    dplyr::group_by(.data$lateral_receiver_player_id, .data$week, .data$season) %>%
-    dplyr::summarize(
-      lateral_yards = sum(.data$lateral_receiving_yards, na.rm = TRUE),
-      lateral_tds = sum(
-        .data$td_player_id == .data$lateral_receiver_player_id,
-        na.rm = TRUE
-      ),
-      lateral_att = dplyr::n(),
-      lateral_fds = sum(.data$first_down_pass, na.rm = T),
-      lateral_fumbles = sum(.data$fumble, na.rm = T),
-      lateral_fumbles_lost = sum(.data$fumble_lost, na.rm = T)
-    ) %>%
-    dplyr::ungroup() %>%
-    dplyr::rename(receiver_player_id = .data$lateral_receiver_player_id) %>%
-    dplyr::bind_rows(
-      mult_lats %>%
-        dplyr::filter(
-          .data$type == "lateral_receiving" &
-            .data$season %in% data$season & .data$week %in% data$week
-        ) %>%
-        dplyr::select(
-          "season",
-          "week",
-          "receiver_player_id" = .data$gsis_player_id,
-          "lateral_yards" = .data$yards
-        ) %>%
-        dplyr::mutate(lateral_tds = 0L, lateral_att = 1L)
-    )
-  
-  # receiver df 3: team receiving for WOPR
-  rec_team <- data %>%
-    dplyr::filter(!is.na(.data$receiver_player_id)) %>%
-    dplyr::group_by(.data$posteam, .data$week, .data$season) %>%
-    dplyr::summarize(
-      team_targets = dplyr::n(),
-      team_air_yards = sum(.data$air_yards, na.rm = TRUE),
-    ) %>%
-    dplyr::ungroup()
-  
-  # rec df: join
-  rec_df <- rec %>%
-    dplyr::left_join(laterals, by = c("receiver_player_id", "week", "season")) %>%
-    dplyr::left_join(rec_team, by = c("team_receiver" = "posteam", "week", "season")) %>%
-    dplyr::mutate(
-      lateral_yards = dplyr::if_else(is.na(.data$lateral_yards), 0, .data$lateral_yards),
-      lateral_tds = dplyr::if_else(is.na(.data$lateral_tds), 0L, .data$lateral_tds),
-      lateral_fumbles = dplyr::if_else(is.na(.data$lateral_fumbles), 0, .data$lateral_fumbles),
-      lateral_fumbles_lost = dplyr::if_else(
-        is.na(.data$lateral_fumbles_lost),
-        0,
-        .data$lateral_fumbles_lost
-      ),
-      lateral_fds = dplyr::if_else(is.na(.data$lateral_fds), 0, .data$lateral_fds)
-    ) %>%
-    dplyr::mutate(
-      receiving_yards = .data$yards + .data$lateral_yards,
-      receiving_tds = .data$tds + .data$lateral_tds,
-      receiving_yards_after_catch = .data$receiving_yards_after_catch + .data$lateral_yards,
-      receiving_first_downs = .data$receiving_first_downs + .data$lateral_fds,
-      receiving_fumbles = .data$receiving_fumbles + .data$lateral_fumbles,
-      receiving_fumbles_lost = .data$receiving_fumbles_lost + .data$lateral_fumbles_lost,
-      racr = .data$receiving_yards / .data$receiving_air_yards,
-      racr = dplyr::case_when(
-        is.nan(.data$racr) ~ NA_real_,
-        .data$receiving_air_yards == 0 ~ 0,
-        # following Josh Hermsmeyer's definition, RACR stays < 0 for RBs (and FBs) and is set to
-        # 0 for Receivers. The list "racr_ids" includes all known RB and FB gsis_ids
-        .data$receiving_air_yards < 0 &
-          !.data$receiver_player_id %in% racr_ids$gsis_id ~ 0,
-        TRUE ~ .data$racr
-      ),
-      target_share = .data$targets / .data$team_targets,
-      air_yards_share = .data$receiving_air_yards / .data$team_air_yards,
-      wopr = 1.5 * .data$target_share + 0.7 * .data$air_yards_share
-    ) %>%
-    dplyr::rename(player_id = .data$receiver_player_id) %>%
+  total_penalties_drawn_data <- pbp |>
+    dplyr::filter(event == 'Penalty' &
+                    penalty_severity != 'Bench Minor') |>
     dplyr::select(
-      "player_id",
-      "week",
-      "season",
-      "name_receiver",
-      "team_receiver",
-      "receiving_yards",
-      "receiving_air_yards",
-      "receiving_yards_after_catch",
-      "receptions",
-      "targets",
-      "receiving_tds",
-      "receiving_fumbles",
-      "receiving_fumbles_lost",
-      "receiving_first_downs",
-      "receiving_epa",
-      "racr",
-      "target_share",
-      "air_yards_share",
-      "wopr"
-    )
+      season,
+      game_id,
+      event_idx,
+      secondary_type,
+      player_name = event_player_2_name,
+      player_id = event_player_2_id,
+      player_type = event_player_2_type
+    ) |>
+    dplyr::group_by(season,
+                    game_id,
+                    secondary_type,
+                    player_id,
+                    player_name) |>
+    dplyr::count() |>
+    mutate(
+      secondary_type = paste('Drawn', secondary_type)
+    ) |> 
+    tidyr::spread(key = secondary_type, value = n, fill = 0) |>
+    janitor::clean_names()
   
-  rec_two_points <- two_points %>%
-    dplyr::filter(.data$pass_attempt == 1) %>%
-    dplyr::group_by(.data$receiver_player_id, .data$week, .data$season) %>%
-    dplyr::summarise(
-      # need name_receiver and team_receiver here for the full join in the next pipe
-      name_receiver = custom_mode(.data$receiver_player_name),
-      team_receiver = custom_mode(.data$posteam),
-      receiving_2pt_conversions = dplyr::n()
-    ) %>%
-    dplyr::rename(player_id = .data$receiver_player_id) %>%
-    dplyr::ungroup()
-  
-  rec_df <- rec_df %>%
-    # need a full join because players without receiving stats that recorded
-    # a receiving two point are dropped in any other join
-    dplyr::full_join(
-      rec_two_points,
-      by = c(
-        "player_id",
-        "week",
-        "season",
-        "name_receiver",
-        "team_receiver"
-      )
-    ) %>%
-    dplyr::mutate(
-      receiving_2pt_conversions = dplyr::if_else(
-        is.na(.data$receiving_2pt_conversions),
-        0L,
-        .data$receiving_2pt_conversions
-      )
-    ) %>%
-    dplyr::filter(!is.na(.data$player_id))
-  
-  rec_df_nas <- is.na(rec_df)
-  epa_index <-
-    which(
-      dimnames(rec_df_nas)[[2]] == c(
-        "receiving_epa",
-        "racr",
-        "target_share",
-        "air_yards_share",
-        "wopr"
-      )
-    )
-  rec_df_nas[, epa_index] <- c(FALSE)
-  
-  rec_df[rec_df_nas] <- 0
-  
-  
-  # Special Teams -----------------------------------------------------------
-  
-  st_tds <- pbp %>%
-    dplyr::filter(.data$special == 1 &
-                    !is.na(.data$td_player_id)) %>%
-    dplyr::group_by(.data$td_player_id, .data$week, .data$season) %>%
-    dplyr::summarise(
-      name_st = custom_mode(.data$td_player_name),
-      team_st = custom_mode(.data$td_team),
-      special_teams_tds = sum(.data$touchdown, na.rm = TRUE)
-    ) %>%
-    dplyr::rename(player_id = .data$td_player_id)
+  penalty_data <- total_pim_taken_data |>
+    dplyr::left_join(total_penalties_taken_data,
+                     by = c('season', 'game_id', 'player_id', 'player_name')) |> 
+    dplyr::left_join(total_pim_drawn_data, 
+                     by = c('season', 'game_id', 'player_id', 'player_name')) |> 
+    dplyr::left_join(total_penalties_drawn_data,
+                     by = c('season', 'game_id', 'player_id', 'player_name'))
   
   
   # Combine all stats -------------------------------------------------------

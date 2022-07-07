@@ -26,6 +26,11 @@ get_nhl_schedule <- function(x){
   # Scrape
   schedule_list <- nhlapi::nhl_schedule_seasons(x)
   
+  teams <- nhlapi::nhl_teams() |> 
+    as_tibble() |> 
+    select(name, abbreviation) |> 
+    arrange(name)
+  
   
   n_games <- schedule_list[[1]]$totalItems
   # return(n_games)
@@ -33,9 +38,9 @@ get_nhl_schedule <- function(x){
   # return(n_days)
   
   schedule <- map_dfr(1:n_days, function(x) {
-    schedule_list %>% 
-      nth(1) %>% 
-      nth(8) %>% 
+      schedule_list %>% 
+        nth(1) %>% 
+        nth(8) %>% 
       pull(games) %>% 
       nth(x) %>% 
       as_tibble()
@@ -50,20 +55,52 @@ get_nhl_schedule <- function(x){
     pull(season) %>% 
     first()
   
-  payload <- sc.scrape_schedule(
-    start_date = schedule %>%
-      pull(gameDate) %>%
-      min() %>%
-      as.Date(),
-    # start_date = schedule %>% pull(gameDate) %>% min() %>% as.Date(),
-    end_date = schedule %>%
-      pull(gameDate) %>%
-      max() %>%
-      as.Date(),
-    print_sched = FALSE
-  ) %>% 
-    as_tibble() %>% 
-    mutate(season = season %>% as.integer())
+  payload <- schedule |> 
+    select(
+      game_id = gamePk,
+      game_date = gameDate,
+      season,
+      session = gameType,
+      game_status = status.abstractGameState,
+      away_team_name = teams.away.team.name,
+      home_team_name = teams.home.team.name,
+      game_venue = venue.name,
+      game_datetime = gameDate
+    ) %>% 
+    mutate(
+      season = as.integer(season),
+      # game_datetime = as.POSIXct(game_datetime, tz = 'GMT'),
+      EST_time_convert = format(as.POSIXct(
+        gsub("T", " ", game_datetime) %>% gsub("Z", "", .),
+        tz = "UTC",
+        format = "%Y-%m-%d %H:%M:%S"
+      ),
+      tz = "Canada/Eastern"), 
+      EST_date = as.Date(
+        ifelse(is.na(EST_time_convert), as.Date(game_datetime) - 1, EST_time_convert), 
+        origin = "1970-01-01"
+      ),
+      game_date = EST_date
+    ) |> 
+    left_join(
+      teams |> 
+        select(home_team_name = name, 
+               home_team = abbreviation),
+      by = c('home_team_name')
+    ) |> 
+    left_join(
+      teams |> 
+        select(away_team_name = name, 
+               away_team = abbreviation),
+      by = c('away_team_name')
+    ) |> 
+    select(
+      game_id, game_date, season,
+      session, game_status, away_team,
+      home_team, game_venue, game_datetime,
+      EST_time_convert, EST_date
+    ) |> 
+    filter(session != 'A')
   
 
   # Save scrape
@@ -147,7 +184,7 @@ fx.hockeyr_update <- function(x, con = initR::fx.db_con(x.host = 'localhost')) {
                                                 game_date <= date_grid$end_date[.x] & 
                                                 !(game_id %in% existing_ids) & 
                                                 !(game_id %in% bad_ids) &
-                                                session == 'R' &
+                                                session != 'PR' &
                                                 game_status == 'Final') %>% 
                                        pull(game_id)
                                      
