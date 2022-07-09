@@ -211,4 +211,4 @@ map(current_season, fx.scrape_nst) # NatStatTrick
 # http://www.nhl.com/scores/htmlreports/20192020/TV030113.HTM # Visitor TOI Shift Report
 # http://www.nhl.com/scores/htmlreports/20192020/TH030113.HTM # Home TOI Shift Report
 # http://www.nhl.com/scores/htmlreports/20192020/SS030113.HTM # Shot Summary
-# http://www.nhl.com/scores/htmlreports/20192020/ES020967.HTM # Event Summary
+# http://www.nhl.com/scores/htmlreports/20192020/ES030113.HTM # Event Summary
