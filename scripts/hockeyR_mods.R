@@ -303,7 +303,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
     pivot_longer(
       cols = contains('_on_'),
       # names_to = NA,
-      values_to = 'on_ice_player_name',
+      values_to = 'player_name',
       values_drop_na = TRUE
     ) |>
     mutate(
@@ -444,7 +444,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
     ) |> 
     group_by(season,
              game_id,
-             on_ice_player_name,
+             player_name,
              player_team_abbr,
              season_type,
              strength_code,
