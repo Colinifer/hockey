@@ -1,4 +1,4 @@
-clean_strength_states <- function(pbp) {
+fix_strength_states <- function(pbp) {
   
   pbp_clean <- pbp |>
     arrange(game_id, event_idx) |> 

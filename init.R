@@ -104,7 +104,7 @@ con <- initR::fx.db_con(x.host = 'localhost') # connect to DB using personal ini
 dbListTables(con)
 map(.x=dbListTables(con), ~tbl(con, .x))
 
-current_season <- 2021
+current_season <- 2022
 current_full_season <- glue('{current_season}{current_season+1}')
 year <- substr(Sys.Date(), 1, 4)
 date <- Sys.Date()
@@ -128,7 +128,7 @@ map(.x = source_files, ~source(.x, echo = F)) %>%
   invisible()
 
 # Get latest rosters
-active_players <- nhlapi::nhl_teams_rosters() %>% 
+active_players <- nhlapi::nhl_teams_rosters(seasons = 2021) %>% 
   unnest(roster.roster) %>% 
   as_tibble() %>% 
   janitor::clean_names()

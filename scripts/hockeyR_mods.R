@@ -16,7 +16,7 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
     pull(game_id) |> 
     unique()
   
-  rosters <- nhlapi::nhl_teams_rosters() |> 
+  rosters <- nhlapi::nhl_teams_rosters(teamIds = 1) |> 
     unnest(roster.roster) |> 
     as_tibble() |> 
     janitor::clean_names() |>
@@ -260,19 +260,21 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
   all_events_data <- main_events_data |>
     dplyr::full_join(secondary_events_data,
                      by = c('season',
-                            'game_id',
+                            # 'game_id',
                             'player_id',
                             'player_name',
                             'season_type',
-                            'strength_state')
+                            # 'strength_state',
+                            NULL)
                      ) |> 
     dplyr::full_join(shots_data,
                      by = c('season',
-                            'game_id',
+                            # 'game_id',
                             'player_id',
                             'player_name',
                             'season_type',
-                            'strength_state')
+                            # 'strength_state',
+                            NULL)
                      )
   
   all_events_data[is.na(all_events_data)] <- 0
@@ -514,6 +516,40 @@ calculate_player_stats_mod <- function(pbp = pbp_df) {
     ) |> filter(position_code != 'G')
   
   # Time On Ice stats -----------------------------------------------------
+  
+  toi_data <- pbp |> 
+    arrange(game_id, event_idx) |> 
+    group_by(game_id) |> 
+    mutate(length = case_when(lead(game_id) == game_id ~ 
+                                lead(period_seconds) - period_seconds,
+                              TRUE ~ 0)) |> 
+    select(length, game_id, season_type, home_abbreviation, away_abbreviation, 
+           home_on_1:away_on_7) |> 
+    filter(length > 0) %>% 
+    pivot_longer(home_on_1:away_on_7,
+                 names_to = "team",
+                 values_to = "player") %>% 
+    filter(!is.na(player)) %>% 
+    mutate(team = ifelse(str_detect(team, "home"), home_abbreviation, 
+                         away_abbreviation)) %>% 
+    select(-c(home_abbreviation, away_abbreviation)) %>% 
+    group_by(season_type, player, team) %>% 
+    # calculate total TOI and games played
+    summarize(toi = sum(length) / 60,
+              gp = n_distinct(game_id),
+              toi_gp = toi/gp) |> 
+    mutate(
+      player_upper = toupper(player)
+    ) |> 
+    left_join(
+      rosters |> 
+        select()
+    )
+    left_join(
+      roster_df |> 
+        select(player, team, player_id),
+      by = c('player_upper' = 'player', 'team')
+    )
   
   shifts_start_data <- pbp |>
     filter(event == 'Change' & !is.na(num_on)) |>
